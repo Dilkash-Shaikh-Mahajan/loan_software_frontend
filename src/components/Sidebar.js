@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Cookies from "js-cookie";
@@ -40,18 +41,18 @@ const menuItems = [
 
 export default function Sidebar({ activeTab, mobileOpen, setMobileOpen }) {
   const router = useRouter();
-  const { t } = useApp();
+  const { t, language } = useApp();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
-    Cookies.remove("auth_token");
-    router.push("/login");
+    setShowLogoutConfirm(true);
   };
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col justify-between bg-bg-card text-text-muted border-r border-border-main p-6 transition-colors duration-300">
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-8 flex-1 min-h-0">
         {/* Logo */}
-        <div className="flex items-center gap-2.5 px-2">
+        <div className="flex items-center gap-2.5 px-2 flex-shrink-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md shadow-indigo-500/30">
             <FiAward className="h-5 w-5 text-white" />
           </div>
@@ -66,7 +67,7 @@ export default function Sidebar({ activeTab, mobileOpen, setMobileOpen }) {
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-1 overflow-y-auto pr-1 flex-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -94,7 +95,7 @@ export default function Sidebar({ activeTab, mobileOpen, setMobileOpen }) {
       </div>
 
       {/* Footer (Logout) */}
-      <div className="border-t border-border-main pt-6">
+      <div className="border-t border-border-main pt-6 flex-shrink-0">
         <button
           onClick={handleLogout}
           className="btn-base flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-medium hover:bg-bg-main hover:text-text-main text-text-muted cursor-pointer"
@@ -134,6 +135,37 @@ export default function Sidebar({ activeTab, mobileOpen, setMobileOpen }) {
               </button>
             </div>
             <SidebarContent />
+          </div>
+        </div>
+      )}
+
+      {/* Logout Confirmation Dialog */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border-main bg-bg-card shadow-2xl p-6 text-center space-y-4 animate-fade-in text-text-main">
+            <h3 className="text-base font-bold">
+              {language === "en" ? "Confirm Logout" : "लॉगआउट की पुष्टि करें"}
+            </h3>
+            <p className="text-xs text-text-muted">
+              {language === "en" ? "Are you sure you want to log out of your session?" : "क्या आप वाकई अपने सत्र से लॉगआउट करना चाहते हैं?"}
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="btn-base flex-1 rounded-xl border border-border-main bg-bg-card py-2.5 text-xs font-bold text-text-muted hover:text-text-main cursor-pointer"
+              >
+                {t("cancel")}
+              </button>
+              <button
+                onClick={() => {
+                  Cookies.remove("auth_token");
+                  router.push("/login");
+                }}
+                className="btn-base flex-1 rounded-xl bg-rose-600 py-2.5 text-xs font-bold text-white hover:bg-rose-550 shadow-sm cursor-pointer"
+              >
+                {t("logout")}
+              </button>
+            </div>
           </div>
         </div>
       )}

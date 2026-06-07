@@ -54,6 +54,8 @@ const initialNotifications = [
 export default function NotificationsView() {
   const { t, language } = useApp();
   const [notifications, setNotifications] = useState(initialNotifications);
+  const [deleteId, setDeleteId] = useState(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const getIcon = (type) => {
     switch (type) {
@@ -92,11 +94,11 @@ export default function NotificationsView() {
   };
 
   const deleteNotification = (id) => {
-    setNotifications(notifications.filter((n) => n.id !== id));
+    setDeleteId(id);
   };
 
   const clearAll = () => {
-    setNotifications([]);
+    setShowClearConfirm(true);
   };
 
   return (
@@ -200,6 +202,72 @@ export default function NotificationsView() {
           </div>
         )}
       </div>
+
+      {/* Delete Single Notification Dialog */}
+      {deleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border-main bg-bg-card shadow-2xl p-6 text-center space-y-4 animate-fade-in text-text-main">
+            <h3 className="text-base font-bold">
+              {language === "en" ? "Delete Notification" : "अधिसूचना हटाएं"}
+            </h3>
+            <p className="text-xs text-text-muted">
+              {language === "en" 
+                ? "Are you sure you want to delete this notification? This action cannot be undone." 
+                : "क्या आप वाकई इस अधिसूचना को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।"}
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="btn-base flex-1 rounded-xl border border-border-main bg-bg-card py-2.5 text-xs font-bold text-text-muted hover:text-text-main cursor-pointer"
+              >
+                {t("cancel")}
+              </button>
+              <button
+                onClick={() => {
+                  setNotifications(notifications.filter((n) => n.id !== deleteId));
+                  setDeleteId(null);
+                }}
+                className="btn-base flex-1 rounded-xl bg-rose-600 py-2.5 text-xs font-bold text-white hover:bg-rose-550 shadow-sm cursor-pointer"
+              >
+                {language === "en" ? "Delete" : "हटाएं"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear All Notifications Dialog */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border-main bg-bg-card shadow-2xl p-6 text-center space-y-4 animate-fade-in text-text-main">
+            <h3 className="text-base font-bold">
+              {language === "en" ? "Clear All Notifications" : "सभी अधिसूचनाएं साफ़ करें"}
+            </h3>
+            <p className="text-xs text-text-muted">
+              {language === "en" 
+                ? "Are you sure you want to clear all notifications? This action cannot be undone." 
+                : "क्या आप वाकई सभी अधिसूचनाओं को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।"}
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="btn-base flex-1 rounded-xl border border-border-main bg-bg-card py-2.5 text-xs font-bold text-text-muted hover:text-text-main cursor-pointer"
+              >
+                {t("cancel")}
+              </button>
+              <button
+                onClick={() => {
+                  setNotifications([]);
+                  setShowClearConfirm(false);
+                }}
+                className="btn-base flex-1 rounded-xl bg-rose-600 py-2.5 text-xs font-bold text-white hover:bg-rose-550 shadow-sm cursor-pointer"
+              >
+                {language === "en" ? "Clear All" : "सभी साफ़ करें"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

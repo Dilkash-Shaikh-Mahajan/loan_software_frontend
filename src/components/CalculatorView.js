@@ -225,9 +225,9 @@ export default function CalculatorView() {
                   </button>
                 </div>
 
-                <div className="overflow-y-auto max-h-96">
-                  <table className="w-full border-collapse text-left text-sm">
-                    <thead>
+                <div className="overflow-auto max-h-96">
+                  <table className="w-full min-w-max border-collapse text-left text-sm">
+                  <thead>
                       <tr className="border-b border-border-main bg-bg-main/50 text-xs font-semibold uppercase tracking-wider text-text-muted sticky top-0 backdrop-blur-md">
                         <th className="px-6 py-4">{t("month")}</th>
                         <th className="px-6 py-4">Beginning Balance</th>

@@ -143,7 +143,7 @@ export default function WorkingHoursView() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
+          <table className="w-full min-w-max border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-border-main bg-bg-main/50 text-xs font-semibold uppercase tracking-wider text-text-muted">
                 <th className="px-5 py-4">{t("agentId")}</th>

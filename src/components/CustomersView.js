@@ -103,7 +103,7 @@ export default function CustomersView() {
 
         {/* Directory Table */}
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
+          <table className="w-full min-w-max border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-border-main bg-bg-main/50 text-xs font-semibold uppercase tracking-wider text-text-muted">
                 <th className="px-6 py-4">{t("custId")}</th>
