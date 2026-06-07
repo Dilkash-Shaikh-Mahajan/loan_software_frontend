@@ -1,26 +1,174 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #09090b;
+  --bg-main: #f9fafb;
+  --bg-card: #ffffff;
+  --bg-header: rgba(255, 255, 255, 0.85);
+  --border-main: #e4e4e7;
+  --text-main: #09090b;
+  --text-muted: #71717a;
 }
 
-@theme inline {
+.dark {
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --bg-main: #09090b;
+  --bg-card: rgba(24, 24, 27, 0.4);
+  --bg-header: rgba(9, 9, 11, 0.85);
+  --border-main: #27272a;
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+}
+
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-bg-main: var(--bg-main);
+  --color-bg-card: var(--bg-card);
+  --color-bg-header: var(--bg-header);
+  --color-border-main: var(--border-main);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-size: 112.5%; /* Adjusts browser base font-size from 16px to 18px for legibility */
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Custom premium design utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.45);
+}
+
+/* Animated gradient glowing background elements */
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(30px, -40px) scale(1.15);
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulseGlowReverse {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(-30px, 40px) scale(1.1);
+    opacity: 0.7;
+  }
+}
+
+.animate-glow-1 {
+  animation: pulseGlow 15s infinite alternate ease-in-out;
+}
+
+.animate-glow-2 {
+  animation: pulseGlowReverse 20s infinite alternate ease-in-out;
+}
+
+/* ─── Button micro-animations ─────────────────────────────────────── */
+/*
+  Apply .btn-base to any button/link to get:
+    • subtle lift + brightness on hover
+    • press-down scale on active/click
+    • smooth transition on all states
+*/
+.btn-base {
+  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease, background-color 150ms ease, filter 150ms ease;
+}
+
+.btn-base:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+.btn-base:active:not(:disabled) {
+  transform: translateY(0px) scale(0.97);
+  filter: brightness(0.97);
+  transition-duration: 80ms;
+}
+
+.btn-base:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ─── Language dropdown slide-in ──────────────────────────────────── */
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.lang-dropdown {
+  animation: dropdownIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+}
+
+/* option hover ripple */
+.lang-option {
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+/* ─── Mobile sidebar slide-in ─────────────────────────────────────── */
+@keyframes slideIn {
+  from { transform: translateX(-100%); opacity: 0.6; }
+  to   { transform: translateX(0);     opacity: 1;   }
+}
+
+.animate-slide-in {
+  animation: slideIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
