@@ -784,6 +784,7 @@ const translations = {
     resolveFeedback: "संग्रहित चिह्नित करें",
     archiveFeedback: "एस्केलेट करें",
     submitFeedback: "विजिट लॉग करें",
+    // new data
     feedbackPlaceholder: "उधारकर्ता की प्रतिक्रिया, परिस्थितियाँ, अगले कदम का वर्णन करें...",
   },
 };
