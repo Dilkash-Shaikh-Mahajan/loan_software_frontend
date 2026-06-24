@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import StatsCards from "@/components/StatsCards";
 import DashboardCharts from "@/components/DashboardCharts";
-import LoansTable from "@/components/LoansTable";
 import AnalyticsView from "@/components/AnalyticsView";
 import { FiMapPin, FiWifi, FiArrowRight } from "react-icons/fi";
 
@@ -39,7 +38,7 @@ export default function DashboardOverviewPage() {
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Tab Toggle */}
-          <div className="flex rounded-xl bg-bg-card border border-border-main p-1 shadow-sm">
+          <div className="flex rounded-xl bg-bg-card/80 backdrop-blur-md border border-border-main p-1 shadow-sm">
             <button
               onClick={() => setActiveTab("overview")}
               className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
@@ -54,7 +53,7 @@ export default function DashboardOverviewPage() {
             >{t("navAnalytics")}</button>
           </div>
 
-          <button className="rounded-xl border border-border-main bg-bg-card px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-bg-main transition-colors shadow-sm cursor-pointer">
+          <button className="rounded-xl border border-border-main bg-bg-card/80 backdrop-blur-md px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-bg-main transition-colors shadow-sm cursor-pointer">
             {t("export")}
           </button>
           <Link
@@ -75,8 +74,9 @@ export default function DashboardOverviewPage() {
           <DashboardCharts />
 
           {/* Agents on Duty Today */}
-          <div className="rounded-2xl border border-border-main bg-bg-card shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between border-b border-border-main px-6 py-4">
+          <div className="rounded-3xl border border-border-main bg-bg-card/70 backdrop-blur-xl shadow-lg shadow-indigo-500/5 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 hover:-translate-y-0.5 relative">
+            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500/10 to-transparent blur-3xl pointer-events-none" />
+            <div className="relative flex items-center justify-between border-b border-border-main/50 px-6 py-5 bg-gradient-to-r from-bg-card/50 to-transparent">
               <div>
                 <h3 className="text-base font-semibold text-text-main">{t("agentSummaryTitle")}</h3>
                 <p className="text-xs text-text-muted mt-0.5">Live field status of active recovery agents</p>
@@ -92,7 +92,9 @@ export default function DashboardOverviewPage() {
               {AGENTS_ON_DUTY.map((agent) => {
                 const Icon = statusIcon[agent.status];
                 return (
-                  <div key={agent.name} className="flex items-center gap-4 px-5 py-4 hover:bg-bg-main/40 transition-colors">
+                  <div key={agent.name} className="flex items-center gap-4 px-5 py-5 hover:bg-bg-main/30 transition-all duration-300 relative group cursor-pointer">
+                    {/* Hover Glow */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
                       <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${agent.gradient} flex items-center justify-center text-white text-xs font-bold shadow-sm`}>
@@ -114,9 +116,6 @@ export default function DashboardOverviewPage() {
               })}
             </div>
           </div>
-
-          {/* Recovery Cases Table */}
-          <LoansTable />
         </>
       ) : (
         <AnalyticsView />

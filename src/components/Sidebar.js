@@ -24,16 +24,11 @@ import {
 
 const menuItems = [
   { id: "dashboard", translationKey: "navDashboard", icon: FiGrid },
-  { id: "calculator", translationKey: "navCalculator", icon: FiPercent },
-  { id: "loans", translationKey: "navLoans", icon: FiBriefcase },
-  { id: "repayments", translationKey: "navRepayments", icon: FiRepeat },
   { id: "customers", translationKey: "navCustomers", icon: FiUsers },
   { id: "recovery-agents", translationKey: "navRecoveryAgents", icon: FiUsers },
   { id: "notifications", translationKey: "navNotifications", icon: FiBell },
   // ── HR / Operations ───────────────────────────────────────
-  { id: "attendance", translationKey: "navAttendance", icon: FiCalendar, divider: true },
-  { id: "working-hours", translationKey: "navWorkingHours", icon: FiClock },
-  { id: "tracking", translationKey: "navTracking", icon: FiMapPin },
+  { id: "tracking", translationKey: "navTracking", icon: FiMapPin, divider: true },
   { id: "feedback", translationKey: "navFeedback", icon: FiMessageSquare },
   // ─────────────────────────────────────────────────────────
   { id: "settings", translationKey: "navSettings", icon: FiSettings, divider: true },
