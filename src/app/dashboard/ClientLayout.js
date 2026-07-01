@@ -34,6 +34,8 @@ export default function DashboardLayout({ children }) {
       setActiveTab("feedback");
     } else if (pathname.startsWith("/dashboard/recovery-agents")) {
       setActiveTab("recovery-agents");
+    } else if (pathname.startsWith("/dashboard/cases")) {
+      setActiveTab("cases");
     }
   }, [pathname]);
 

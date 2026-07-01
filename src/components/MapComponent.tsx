@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, LayersControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import io from "socket.io-client";
@@ -43,10 +43,26 @@ export default function MapComponent({ locations = {}, selectedUserId }: MapComp
         zoom={selectedUserId ? 14 : 5}
         style={{ height: "100%", width: "100%", borderRadius: "16px" }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <LayersControl position="topright">
+          <LayersControl.BaseLayer checked name="Google Street">
+            <TileLayer
+              attribution='&copy; Google Maps'
+              url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Google Satellite">
+            <TileLayer
+              attribution='&copy; Google Maps'
+              url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Google Hybrid">
+            <TileLayer
+              attribution='&copy; Google Maps'
+              url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
 
         {Object.values(locations).map((loc) => (
           <Marker key={loc.userId} position={[loc.lat, loc.lng]}>

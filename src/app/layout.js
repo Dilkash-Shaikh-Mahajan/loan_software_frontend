@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppProvider } from "@/context/AppContext";
+import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,8 @@ export const metadata = {
   description: "ApexLoan empowers financial institutions with interactive amortization simulators, real-time analytics dashboards, and secure credit risk evaluations.",
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({ children }) {
   return (
     <html
@@ -25,7 +28,12 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <AppProvider>{children}</AppProvider>
+        <ReactQueryProvider>
+          <AppProvider>
+            {children}
+            <Toaster position="bottom-right" />
+          </AppProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );

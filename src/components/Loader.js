@@ -10,6 +10,7 @@
  */
 export default function Loader({ fullScreen = true, message = "", size = "md" }) {
   const sizeMap = {
+    xs: "h-4 w-4 border-2",
     sm: "h-6 w-6 border-2",
     md: "h-10 w-10 border-[3px]",
     lg: "h-14 w-14 border-4",

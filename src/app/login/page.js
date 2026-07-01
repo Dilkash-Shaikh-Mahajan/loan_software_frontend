@@ -8,8 +8,10 @@ import * as yup from "yup";
 import Cookies from "js-cookie";
 import { useApp } from "@/context/AppContext";
 import LanguageDropdown from "@/components/LanguageDropdown";
-import { FiMail, FiLock, FiEye, FiEyeOff, FiAward, FiLoader, FiSun, FiMoon } from "react-icons/fi";
-
+import { FiMail, FiLock, FiEye, FiEyeOff, FiAward, FiSun, FiMoon } from "react-icons/fi";
+import Loader from "@/components/Loader";
+import { toast } from "react-hot-toast";
+import { login } from "@/services/apiService";
 export default function LoginPage() {
   const router = useRouter();
   const { theme, toggleTheme, language, toggleLanguage, t } = useApp();
@@ -37,11 +39,22 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data) => {
-    setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    Cookies.set("auth_token", "demo_session_token", { expires: 7 });
-    setLoading(false);
-    router.push("/dashboard");
+    try {
+      setLoading(true);
+      const res = await login({ email: data.email, password: data.password });
+      Cookies.set("auth_token", res.token || "demo_session_token", { expires: 7 });
+      
+      if (res.data) {
+        localStorage.setItem("user", JSON.stringify(res.data));
+      }
+      
+      toast.success(t("loginSuccess") || "Login successful");
+      router.push("/dashboard");
+    } catch (error) {
+      toast.error(error.message || t("loginFailed") || "Failed to login");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -158,7 +171,7 @@ export default function LoginPage() {
             >
               {loading ? (
                 <>
-                  <FiLoader className="h-4 w-4 animate-spin" />
+                  <Loader fullScreen={false} size="xs" />
                   {t("signingIn")}
                 </>
               ) : (

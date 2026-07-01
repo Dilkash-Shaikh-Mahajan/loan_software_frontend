@@ -90,7 +90,7 @@ export default function EmployeeTrackingView() {
               employeeId: user.employeeId || "N/A",
               name: user.name || "Unknown",
               role: "Field Agent",
-              dept: "Central Zone", // You can map real depts here
+              dept: user.zone || "N/A",
               status: hasLocation ? "OnSite" : "Remote",
               currentCase: "Active Patrol",
               avatar: idx % AVATAR_COLORS.length,
@@ -205,15 +205,17 @@ export default function EmployeeTrackingView() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
         {[
-          { label: t("totalStaff"),  val: agents.length, icon: FiUsers,    color: "text-indigo-500" },
-          { label: t("onSite"),      val: onSite,        icon: FiMapPin,   color: "text-emerald-500" },
-          { label: t("remote"),      val: remote,        icon: FiWifi,     color: "text-indigo-400" },
-          { label: t("onLeaveCount"),val: onLeave,       icon: FiCalendar, color: "text-amber-500" },
+          { label: t("totalStaff"),  val: agents.length, icon: FiUsers,    color: "text-indigo-500", bgGlow: "group-hover:shadow-indigo-500/10", borderGlow: "group-hover:border-indigo-500/30" },
+          { label: t("onSite"),      val: onSite,        icon: FiMapPin,   color: "text-emerald-500", bgGlow: "group-hover:shadow-emerald-500/10", borderGlow: "group-hover:border-emerald-500/30" },
+          { label: t("remote"),      val: remote,        icon: FiWifi,     color: "text-indigo-400", bgGlow: "group-hover:shadow-indigo-400/10", borderGlow: "group-hover:border-indigo-400/30" },
+          { label: t("onLeaveCount"),val: onLeave,       icon: FiCalendar, color: "text-amber-500", bgGlow: "group-hover:shadow-amber-500/10", borderGlow: "group-hover:border-amber-500/30" },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm">
+          <div key={s.label} className={`group rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${s.bgGlow} ${s.borderGlow}`}>
             <div className="flex items-center justify-between text-text-muted mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider">{s.label}</span>
-              <s.icon className={`h-4 w-4 ${s.color}`} />
+              <span className="text-xs font-semibold uppercase tracking-wider group-hover:text-text-main transition-colors">{s.label}</span>
+              <div className={`p-1.5 rounded-lg bg-bg-main shadow-sm border border-border-main group-hover:scale-110 transition-transform duration-300`}>
+                <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
+              </div>
             </div>
             <p className="text-2xl font-bold text-text-main">{s.val}</p>
           </div>
@@ -222,18 +224,18 @@ export default function EmployeeTrackingView() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+        <div className="relative flex-1 min-w-[200px] max-w-xs group">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted group-focus-within:text-indigo-500 transition-colors" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder={t("search")}
-            className="w-full rounded-xl border border-border-main bg-bg-card py-2 pl-9 pr-4 text-sm outline-none focus:border-indigo-500 text-text-main" />
+            className="w-full rounded-xl border border-border-main bg-bg-card py-2.5 pl-9 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-text-main hover:border-border-main hover:shadow-sm" />
         </div>
         <select value={filterDept} onChange={e => setFilterDept(e.target.value)}
-          className="rounded-xl border border-border-main bg-bg-card py-2 px-3 text-sm outline-none focus:border-indigo-500 text-text-main cursor-pointer">
+          className="rounded-xl border border-border-main bg-bg-card py-2.5 px-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-text-main cursor-pointer hover:border-border-main hover:shadow-sm appearance-none">
           {ZONES.map(z => <option key={z} value={z}>{z === "All" ? t("allDepts") : z}</option>)}
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-          className="rounded-xl border border-border-main bg-bg-card py-2 px-3 text-sm outline-none focus:border-indigo-500 text-text-main cursor-pointer">
+          className="rounded-xl border border-border-main bg-bg-card py-2.5 px-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-text-main cursor-pointer hover:border-border-main hover:shadow-sm appearance-none">
           {STATUSES.map(s => <option key={s} value={s}>{s === "All" ? t("allStatuses2") : t(s)}</option>)}
         </select>
       </div>
@@ -247,10 +249,11 @@ export default function EmployeeTrackingView() {
           </div>
 
           {/* Map Side Telemetry Panel */}
-          <div className="rounded-3xl border border-border-main bg-bg-card p-5 shadow-sm flex flex-col justify-between h-[520px] overflow-hidden">
-            <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
+          <div className="rounded-3xl border border-border-main bg-bg-card/80 backdrop-blur-xl p-5 shadow-lg shadow-indigo-500/5 flex flex-col justify-between h-[520px] overflow-hidden relative">
+            <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 blur-2xl pointer-events-none" />
+            <div className="space-y-4 flex-1 flex flex-col overflow-hidden relative z-10">
               <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Select Agent to Track</span>
-              <div className="overflow-y-auto pr-1 flex-shrink-0 space-y-2 max-h-[140px]">
+              <div className="overflow-y-auto pr-1 flex-shrink-0 space-y-2 max-h-[160px] custom-scrollbar">
                 {filteredAgents.map(emp => {
                   const isSelected = selectedAgentId === emp.id;
                   const empLoc = locations[emp.id];
@@ -335,39 +338,41 @@ export default function EmployeeTrackingView() {
         </div>
       ) : (
         /* GRID VIEW CONTAINER */
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-fade-in">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-fade-in">
           {filteredAgents.length > 0 ? filteredAgents.map(emp => {
             const loc = locations[emp.id];
             
             return (
-              <div key={emp.id} className="group rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="relative">
-                    <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${AVATAR_COLORS[emp.avatar]} flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
+              <div key={emp.id} className="group relative rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                <div className="relative z-10 flex items-start justify-between mb-4">
+                  <div className="relative group/avatar cursor-pointer">
+                    <div className={`absolute -inset-0.5 rounded-xl bg-gradient-to-br ${AVATAR_COLORS[emp.avatar]} opacity-30 group-hover/avatar:opacity-100 group-hover/avatar:blur-sm transition duration-500`}></div>
+                    <div className={`relative h-12 w-12 rounded-xl bg-gradient-to-br ${AVATAR_COLORS[emp.avatar]} flex items-center justify-center text-white font-bold text-sm shadow-md group-hover/avatar:scale-105 transition-transform duration-300 ring-2 ring-bg-card`}>
                       {emp.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                     </div>
-                    <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-bg-card ${loc ? statusCfg.OnSite.dot : statusCfg.Remote.dot}`} />
+                    <span className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-bg-card ${loc ? statusCfg.OnSite.dot : statusCfg.Remote.dot}`} />
                   </div>
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${loc ? statusCfg.OnSite.cls : statusCfg.Remote.cls}`}>
+                  <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase ${loc ? statusCfg.OnSite.cls : statusCfg.Remote.cls}`}>
                     {loc ? "Tracking" : "Offline"}
                   </span>
                 </div>
 
-                <div className="mb-3">
-                  <div className="font-semibold text-text-main leading-tight">{emp.name}</div>
-                  <div className="text-xs text-text-muted">{emp.role}</div>
-                  <div className="text-[10px] text-text-muted mt-0.5 font-medium">{emp.employeeId}</div>
+                <div className="mb-4 relative z-10">
+                  <div className="font-bold text-text-main text-base leading-tight group-hover:text-indigo-500 transition-colors">{emp.name}</div>
+                  <div className="text-xs text-text-muted mt-0.5">{emp.role} • {emp.dept}</div>
+                  <div className="text-[10px] text-text-muted mt-1 font-mono">{emp.employeeId}</div>
                 </div>
 
-                <div className="flex items-start gap-1.5 text-xs text-text-muted mb-3">
-                  <FiMapPin className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-indigo-400" />
-                  <span className="leading-tight">
+                <div className="flex items-start gap-2 text-xs text-text-muted mb-4 relative z-10">
+                  <div className="p-1 rounded-md bg-indigo-500/10 text-indigo-500 mt-0.5"><FiMapPin className="h-3 w-3" /></div>
+                  <span className="leading-tight mt-0.5 font-medium">
                     {loc ? `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}` : "Location unavailable"}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between mt-4 border-t border-border-main pt-3">
-                  <span className="text-[10px] text-text-muted">
+                <div className="flex items-center justify-between mt-4 border-t border-border-main/60 pt-4 relative z-10">
+                  <span className="text-[10px] font-semibold text-text-muted">
                     {loc ? `Updated: ${new Date(loc.updatedAt).toLocaleTimeString()}` : "Never"}
                   </span>
                   <button 
@@ -375,7 +380,7 @@ export default function EmployeeTrackingView() {
                       setSelectedAgentId(emp.id);
                       setViewMode("map");
                     }}
-                    className="btn-base text-[10px] font-semibold text-indigo-500 hover:text-indigo-400 cursor-pointer border border-indigo-500/30 rounded-lg px-2.5 py-1 bg-indigo-500/5">
+                    className="btn-base text-[10px] font-bold text-white cursor-pointer bg-indigo-600 hover:bg-indigo-500 rounded-lg px-3 py-1.5 shadow-sm shadow-indigo-600/20 hover:-translate-y-0.5 transition-all">
                     Track Live
                   </button>
                 </div>

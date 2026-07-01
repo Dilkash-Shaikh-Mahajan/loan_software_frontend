@@ -39,6 +39,7 @@ const translations = {
     navLoans: "Loans",
     navRepayments: "Repayments",
     navCustomers: "Customers",
+    navCases: "Cases",
     navSettings: "Settings",
 
     // Header / Welcome
@@ -404,6 +405,7 @@ const translations = {
     navLoans: "ऋण सूची",
     navRepayments: "पुनर्भुगतान",
     navCustomers: "ग्राहक",
+    navCases: "मामले",
     navSettings: "सेटिंग्स",
 
     // Header / Welcome
