@@ -57,10 +57,11 @@ export default function CustomerFeedbackView() {
 
   const { data: fetchedFeedbacks = [], isLoading } = useQuery({
     queryKey: ["feedbacks", filterCat, search],
-    queryFn: () => fetchFeedbacks({
-      ...(filterCat !== "All" && { category: filterCat }),
-      ...(search && { search })
-    }),
+    queryFn: () =>
+      fetchFeedbacks({
+        ...(filterCat !== "All" && { category: filterCat }),
+        ...(search && { search }),
+      }),
   });
 
   const getStatus = (r) => {
@@ -480,7 +481,7 @@ export default function CustomerFeedbackView() {
               src={
                 selectedImage.startsWith("http")
                   ? selectedImage
-                  : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${selectedImage}`
+                  : `${process.env.NEXT_PUBLIC_API_URL || "https://loan-software-backend.onrender.com"}${selectedImage}`
               }
               alt="Feedback Attachment"
               className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
