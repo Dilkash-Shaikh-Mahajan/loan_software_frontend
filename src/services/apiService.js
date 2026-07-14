@@ -1,9 +1,9 @@
 import axios from "axios";
-import Cookies from "js-cookie";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://loan-software-backend.onrender.com";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+// const API_URL =
+//   process.env.NEXT_PUBLIC_API_URL ||
+//   "https://loan-software-backend.onrender.com";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -11,7 +11,10 @@ const api = axios.create({
 
 // Request interceptor to attach auth token
 api.interceptors.request.use((config) => {
-  const token = Cookies.get("auth_token");
+  let token = null;
+  if (typeof window !== "undefined") {
+    token = sessionStorage.getItem("auth_token");
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -23,8 +26,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      Cookies.remove("auth_token");
       if (typeof window !== "undefined") {
+        sessionStorage.removeItem("auth_token");
         localStorage.removeItem("user");
         window.location.href = "/login";
       }
@@ -99,4 +102,27 @@ export const markNotificationAsRead = async (id) => {
 export const login = async (credentials) => {
   const { data } = await api.post("/api/auth/login", credentials);
   return data;
+};
+
+// Analytics API Endpoints
+export const fetchVisitOutcomesAnalytics = async (params = {}) => {
+  const { data } = await api.get("/api/analytics/visit-outcomes", { params });
+  return data.success && data.data ? data.data : [];
+};
+
+export const fetchAgentFeedbackAnalytics = async (params) => {
+  const response = await api.get("/api/analytics/agent-feedbacks", { params });
+  return response.data.data; // array of agent feedback counts
+};
+
+export const fetchAgentFeedbackStacked = async (params) => {
+  const response = await api.get("/api/analytics/agent-feedback-stacked", {
+    params,
+  });
+  return response.data.data; // array of stacked agent feedback
+};
+
+export const fetchDashboardStats = async () => {
+  const response = await api.get("/api/analytics/dashboard-stats");
+  return response.data.data; // { activeCases, resolvedCases }
 };

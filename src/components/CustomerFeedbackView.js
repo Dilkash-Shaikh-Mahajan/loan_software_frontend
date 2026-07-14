@@ -15,6 +15,25 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { fetchFeedbacks } from "@/services/apiService";
 import Loader from "@/components/Loader";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+);
 
 const CATEGORIES = [
   "Promise to pay",
@@ -41,10 +60,12 @@ const statusCfg = {
 };
 
 export default function CustomerFeedbackView() {
-  const { t } = useApp();
+  const { t, theme } = useApp();
 
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [modal, setModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -56,13 +77,76 @@ export default function CustomerFeedbackView() {
   const [fComment, setFComment] = useState("");
 
   const { data: fetchedFeedbacks = [], isLoading } = useQuery({
-    queryKey: ["feedbacks", filterCat, search],
+    queryKey: ["feedbacks", filterCat, search, startDate, endDate],
     queryFn: () =>
       fetchFeedbacks({
         ...(filterCat !== "All" && { category: filterCat }),
         ...(search && { search }),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
       }),
   });
+
+  const isDark = theme === "dark";
+  const textColor = isDark ? "#a1a1aa" : "#71717a";
+  const gridColor = isDark ? "#27272a" : "#e4e4e7";
+
+  const outcomeCounts = {};
+  fetchedFeedbacks.forEach((r) => {
+    const cat = r.feedback || "Unknown";
+    outcomeCounts[cat] = (outcomeCounts[cat] || 0) + 1;
+  });
+
+  const chartLabels = Object.keys(outcomeCounts);
+  const chartDataValues = chartLabels.map((l) => outcomeCounts[l]);
+
+  const barChartData = {
+    labels: chartLabels.map((l) => t(l) || l),
+    datasets: [
+      {
+        label: "Outcomes",
+        data: chartDataValues,
+        backgroundColor: "#4f46e5",
+        borderRadius: 8,
+        borderSkipped: false,
+        barThickness: 40,
+      },
+    ],
+  };
+
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: isDark ? "#18181b" : "#ffffff",
+        titleColor: isDark ? "#f4f4f5" : "#09090b",
+        bodyColor: isDark ? "#a1a1aa" : "#71717a",
+        borderColor: isDark ? "#27272a" : "#e4e4e7",
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 12,
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          color: textColor,
+          font: { family: "var(--font-geist-sans)", size: 11 },
+        },
+      },
+      y: {
+        grid: { color: gridColor, borderDash: [5, 4] },
+        ticks: {
+          color: textColor,
+          font: { family: "var(--font-geist-sans)", size: 11 },
+          stepSize: 1,
+        },
+      },
+    },
+  };
 
   const getStatus = (r) => {
     if (r.amount > 0 || r.feedback === "Already made payment")
@@ -119,12 +203,6 @@ export default function CustomerFeedbackView() {
           </h1>
           <p className="text-sm text-text-muted mt-0.5">{t("feedbackSub")}</p>
         </div>
-        <button
-          onClick={() => setModal(true)}
-          className="btn-base flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 cursor-pointer hover:bg-indigo-500 transition-all hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <FiPlus className="h-4 w-4" /> {t("addFeedback")}
-        </button>
       </div>
 
       {/* Stat Cards */}
@@ -168,53 +246,6 @@ export default function CustomerFeedbackView() {
             <p className="text-2xl font-bold text-text-main">{s.val}</p>
           </div>
         ))}
-      </div>
-
-      {/* Outcomes Distribution */}
-      <div className="rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm">
-        <h2 className="text-sm font-bold text-text-main mb-4">
-          {t("category")} Breakdown
-        </h2>
-        <div className="space-y-3">
-          {[
-            {
-              label: "Resolved",
-              translationKey: "Resolved",
-              colorCls: "bg-emerald-500",
-            },
-            {
-              label: "Pending2",
-              translationKey: "Pending2",
-              colorCls: "bg-amber-400",
-            },
-            {
-              label: "Archived",
-              translationKey: "Archived",
-              colorCls: "bg-zinc-400",
-            },
-          ].map((outcome) => {
-            const count = records.filter(
-              (r) => r.status === outcome.label,
-            ).length;
-            const pct = records.length ? (count / records.length) * 100 : 0;
-            return (
-              <div key={outcome.label} className="flex items-center gap-3">
-                <div className="w-28 text-xs text-text-muted font-medium">
-                  {t(outcome.translationKey)}
-                </div>
-                <div className="flex-1 h-2 rounded-full bg-border-main overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${outcome.colorCls} transition-all duration-500`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <span className="text-xs text-text-muted w-6 text-right font-semibold">
-                  {count}
-                </span>
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       {/* Table Panel */}
@@ -353,116 +384,6 @@ export default function CustomerFeedbackView() {
         </div>
       </div>
 
-      {/* Add Visit Modal */}
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setModal(false)}
-          />
-          <div className="relative z-10 w-full max-w-lg rounded-3xl border border-border-main bg-bg-card p-8 shadow-2xl text-text-main animate-scale-in">
-            <div className="flex items-center justify-between border-b border-border-main pb-4 mb-6">
-              <h3 className="text-lg font-semibold">{t("addFeedback")}</h3>
-              <button
-                onClick={() => setModal(false)}
-                className="btn-base rounded-xl p-1.5 hover:bg-bg-main text-text-muted cursor-pointer"
-              >
-                <FiX className="h-5 w-5" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-                    {t("customerName")}
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    value={fName}
-                    onChange={(e) => setFName(e.target.value)}
-                    placeholder="Defaulter Name"
-                    className="w-full rounded-2xl border border-border-main bg-bg-main py-3 px-4 text-sm outline-none focus:border-indigo-500 text-text-main"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-                    {t("loanRefIdFb")}
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    value={fLoanId}
-                    onChange={(e) => setFLoanId(e.target.value)}
-                    placeholder="LN-XXXX"
-                    className="w-full rounded-2xl border border-border-main bg-bg-main py-3 px-4 text-sm outline-none focus:border-indigo-500 text-text-main"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-                    {t("category")}
-                  </label>
-                  <select
-                    value={fCat}
-                    onChange={(e) => setFCat(e.target.value)}
-                    className="w-full rounded-2xl border border-border-main bg-bg-main py-3 px-4 text-sm outline-none focus:border-indigo-500 text-text-main cursor-pointer"
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {t(c)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-                    {t("rating")}
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={fRating}
-                    onChange={(e) => setFRating(e.target.value)}
-                    placeholder="0"
-                    className="w-full rounded-2xl border border-border-main bg-bg-main py-3 px-4 text-sm outline-none focus:border-indigo-500 text-text-main"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-                  {t("comment")}
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={fComment}
-                  onChange={(e) => setFComment(e.target.value)}
-                  placeholder={t("feedbackPlaceholder")}
-                  className="w-full rounded-2xl border border-border-main bg-bg-main py-3 px-4 text-sm outline-none focus:border-indigo-500 text-text-main resize-none"
-                />
-              </div>
-              <div className="flex gap-4 pt-4 border-t border-border-main">
-                <button
-                  type="button"
-                  onClick={() => setModal(false)}
-                  className="btn-base flex-1 rounded-2xl border border-border-main py-3 text-sm font-semibold hover:bg-bg-main cursor-pointer text-text-main"
-                >
-                  {t("cancel")}
-                </button>
-                <button
-                  type="submit"
-                  className="btn-base flex-1 rounded-2xl bg-indigo-600 py-3 text-sm font-semibold text-white cursor-pointer flex items-center justify-center gap-2 hover:bg-indigo-500"
-                >
-                  <FiCheck className="h-4 w-4" /> {t("submitFeedback")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Image Viewer Modal */}
       {selectedImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -478,11 +399,7 @@ export default function CustomerFeedbackView() {
               <FiX className="h-5 w-5" />
             </button>
             <img
-              src={
-                selectedImage.startsWith("http")
-                  ? selectedImage
-                  : `${process.env.NEXT_PUBLIC_API_URL || "https://loan-software-backend.onrender.com"}${selectedImage}`
-              }
+              src={`${process.env.NEXT_PUBLIC_API_URL}${selectedImage}`}
               alt="Feedback Attachment"
               className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
             />

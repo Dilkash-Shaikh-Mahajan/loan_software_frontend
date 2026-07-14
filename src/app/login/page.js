@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import Cookies from "js-cookie";
 import { useApp } from "@/context/AppContext";
 import LanguageDropdown from "@/components/LanguageDropdown";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiAward, FiSun, FiMoon } from "react-icons/fi";
@@ -42,7 +41,7 @@ export default function LoginPage() {
     try {
       setLoading(true);
       const res = await login({ email: data.email, password: data.password });
-      Cookies.set("auth_token", res.token || "demo_session_token", { expires: 7 });
+      sessionStorage.setItem("auth_token", res.token || "demo_session_token");
       
       if (res.data) {
         localStorage.setItem("user", JSON.stringify(res.data));

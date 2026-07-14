@@ -3,171 +3,143 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
+import { useQuery } from "@tanstack/react-query";
+import { fetchDashboardStats, fetchCustomers } from "@/services/apiService";
 import StatsCards from "@/components/StatsCards";
 import DashboardCharts from "@/components/DashboardCharts";
-import AnalyticsView from "@/components/AnalyticsView";
-import { FiMapPin, FiWifi, FiArrowRight } from "react-icons/fi";
+import { FiBell, FiChevronRight } from "react-icons/fi";
+
 import Loader from "@/components/Loader";
-import { useQuery } from "@tanstack/react-query";
-import { fetchAgents } from "@/services/apiService";
-
-const gradients = [
-  "from-indigo-500 to-purple-600",
-  "from-emerald-500 to-teal-600",
-  "from-amber-500 to-orange-600",
-  "from-rose-500 to-pink-600",
-  "from-sky-500 to-cyan-600",
-];
-
-const statusDot = { OnSite: "bg-emerald-500", Remote: "bg-indigo-400" };
 
 export default function DashboardOverviewPage() {
   const { t } = useApp();
-  const [activeTab, setActiveTab] = useState("overview");
+  const userName = "Admin"; // You can replace this with actual user context
 
-  const { data: agentsData, isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: fetchAgents,
+  const { data: dashboardStats } = useQuery({
+    queryKey: ["dashboardStats"],
+    queryFn: fetchDashboardStats,
   });
 
-  const displayAgents =
-    agentsData && agentsData.length > 0
-      ? agentsData.slice(0, 5).map((agent, i) => {
-          const nameParts = agent.name ? agent.name.split(" ") : ["U"];
-          const initials = nameParts
-            .map((n) => n[0])
-            .join("")
-            .substring(0, 2)
-            .toUpperCase();
-          return {
-            id: agent._id || i,
-            name: agent.name,
-            // zone: agent.zone || "N/A",
-            cases: Math.floor(Math.random() * 10),
-            status: i % 2 === 0 ? "OnSite" : "Remote",
-            initials,
-            gradient: gradients[i % gradients.length],
-          };
-        })
-      : [];
+  const { data: customersData, isLoading: isLoadingCustomers } = useQuery({
+    queryKey: ["customers", { limit: 6 }],
+    queryFn: () => fetchCustomers({ limit: 6 }),
+  });
+
+  const activeCases = dashboardStats?.activeCases || 0;
+  const resolvedCases = dashboardStats?.resolvedCases || 0;
+
+  const recentCases = customersData?.data || [];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-main font-sans">
-            {t("recoveryOverview")}
-          </h1>
-          <p className="text-sm text-text-muted font-sans mt-0.5">
-            {t("recoveryOverviewSub")}
-          </p>
+    <div className="relative min-h-screen bg-bg-main overflow-x-hidden pb-20 animate-fade-in">
+      {/* Curved Header Background with Blobs */}
+      <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-br from-[#4F3DE6] to-[#8F53EE] rounded-b-[40px] z-0 overflow-hidden">
+        {/* SVG Blob 1 */}
+        <div className="absolute -top-12 -right-12 opacity-15 animate-[spin_25s_linear_infinite]">
+          <svg width="250" height="250" viewBox="0 0 200 200">
+            <path
+              fill="#FFFFFF"
+              transform="translate(100 100)"
+              d="M46.7,-70C58.3,-62.5,64,-44.6,69.5,-27.6C74.9,-10.7,80,5.3,77.3,20C74.7,34.7,64.2,48.1,50.7,56.4C37.3,64.6,20.8,67.6,4.6,61.9C-11.6,56.2,-27.4,41.9,-41.8,29.9C-56.1,18,-69.1,8.3,-71.4,-2.8C-73.8,-13.8,-65.4,-26.3,-54,-35.1C-42.6,-43.8,-28.1,-48.9,-14.3,-58.5C-0.5,-68.2,12.7,-82.5,26.7,-80.7C40.6,-78.9,55.4,-61,46.7,-70Z"
+            />
+          </svg>
         </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Tab Toggle */}
-          <div className="flex rounded-xl bg-bg-card/80 backdrop-blur-md border border-border-main p-1 shadow-sm">
-            <button
-              onClick={() => setActiveTab("overview")}
-              className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === "overview"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-text-muted hover:text-text-main"
-              }`}
-            >
-              {t("navDashboard")}
-            </button>
-            <button
-              onClick={() => setActiveTab("analytics")}
-              className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === "analytics"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-text-muted hover:text-text-main"
-              }`}
-            >
-              {t("navAnalytics")}
-            </button>
-          </div>
-
-          <button className="rounded-xl border border-border-main bg-bg-card/80 backdrop-blur-md px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-bg-main transition-colors shadow-sm cursor-pointer">
-            {t("export")}
-          </button>
-          <Link
-            href="/dashboard/recovery-agents"
-            className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors shadow-sm shadow-indigo-600/15 cursor-pointer"
-          >
-            {t("assignCase")}
-          </Link>
+        {/* SVG Blob 2 */}
+        <div className="absolute top-20 -left-20 opacity-10 animate-[spin_30s_linear_infinite_reverse]">
+          <svg width="300" height="300" viewBox="0 0 200 200">
+            <path
+              fill="#FFFFFF"
+              transform="translate(100 100)"
+              d="M54.7,-64.7C68.9,-54.6,76.9,-35,80.1,-15C83.3,5.1,81.6,25.6,71.2,40.9C60.8,56.3,41.6,66.6,21.8,70.6C2,74.7,-18.3,72.6,-35,63.4C-51.7,54.2,-64.8,38,-72,19.3C-79.3,0.7,-80.7,-20.3,-71.9,-36.8C-63.1,-53.4,-44,-65.5,-25.9,-70.6C-7.8,-75.7,9.3,-73.9,26.4,-69.8C43.4,-65.7,60.4,-59.4,54.7,-64.7Z"
+            />
+          </svg>
         </div>
       </div>
 
-      {activeTab === "overview" ? (
-        <>
-          {/* KPI Cards */}
-          <StatsCards />
+      <div className="relative z-10 px-4 sm:px-6 lg:px-8 pt-8">
+        {/* Top Header Row */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white font-sans drop-shadow-md">
+              {t("WELCOME_BACK") || "Welcome Back"} {userName}
+            </h1>
+          </div>
+        </div>
 
-          {/* Charts */}
+        {/* Dashboard Content Container */}
+        <div className="max-w-5xl mx-auto space-y-6 mt-4">
+          {/* Charts (Visit Outcomes) */}
           <DashboardCharts />
 
-          {/* Agents on Duty Today */}
-          <div className="rounded-3xl border border-border-main bg-bg-card/70 backdrop-blur-xl shadow-lg shadow-indigo-500/5 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 hover:-translate-y-0.5 relative">
-            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500/10 to-transparent blur-3xl pointer-events-none" />
-            <div className="relative flex items-center justify-between border-b border-border-main/50 px-6 py-5 bg-gradient-to-r from-bg-card/50 to-transparent">
-              <div>
-                <h3 className="text-base font-semibold text-text-main">
-                  {t("agentSummaryTitle")}
-                </h3>
-                <p className="text-xs text-text-muted mt-0.5">
-                  Live field status of active recovery agents
-                </p>
-              </div>
+          {/* KPI Cards */}
+          <StatsCards activeCases={activeCases} resolvedCases={resolvedCases} />
+
+          {/* Urgent Follow Ups */}
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-text-main">
+                {t("URGENT_FOLLOW_UPS") || "URGENT FOLLOW-UPS"}
+              </h2>
               <Link
-                href="/dashboard/recovery-agents"
-                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-500 hover:text-indigo-400 transition-colors cursor-pointer"
+                href="/dashboard/cases"
+                className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
               >
-                View all agents <FiArrowRight className="h-3.5 w-3.5" />
+                {t("VIEW_ALL") || "VIEW ALL"}
               </Link>
             </div>
-            <div className="grid grid-cols-1 gap-0 divide-y divide-border-main sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-5 lg:divide-x lg:divide-y-0">
-              {isLoadingAgents ? (
-                <div className="col-span-full py-8 flex justify-center text-indigo-500">
-                  <Loader fullScreen={false} size="sm" />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {isLoadingCustomers ? (
+                <div className="flex justify-center py-4">
+                  <Loader size="sm" />
                 </div>
+              ) : recentCases.length === 0 ? (
+                <p className="text-sm text-text-muted text-center py-4">
+                  {t("noRecords") || "No cases found."}
+                </p>
               ) : (
-                displayAgents.map((agent) => {
-                  // const Icon = statusIcon[agent.status] || FiMapPin;
+                recentCases.map((caseItem) => {
+                  const status = caseItem.isFeedbackCollected
+                    ? t("Resolved") || "Resolved"
+                    : t("Active") || "Active";
+                  const statusColor = caseItem.isFeedbackCollected
+                    ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
+                    : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20";
+
                   return (
                     <div
-                      key={agent.id || agent.name}
-                      className="flex items-center gap-4 px-5 py-5 hover:bg-bg-main/30 transition-all duration-300 relative group cursor-pointer"
+                      key={caseItem._id}
+                      className={`flex items-center justify-between p-4 rounded-xl bg-bg-card border-l-4 border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md ${
+                        caseItem.isFeedbackCollected
+                          ? "border-l-emerald-500"
+                          : "border-l-amber-500"
+                      }`}
                     >
-                      {/* Hover Glow */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                      {/* Avatar */}
-                      <div className="relative flex-shrink-0">
-                        <div
-                          className={`h-10 w-10 rounded-xl bg-gradient-to-br ${agent.gradient} flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                        >
-                          {agent.initials}
-                        </div>
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-bg-card ${statusDot[agent.status]}`}
-                        />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-text-main">
+                          {caseItem.customerName}
+                        </span>
+                        <span className="text-xs font-medium text-text-muted mt-1">
+                          BKT/DPD: {caseItem.bkt || "N/A"} •{" "}
+                          {caseItem.product || caseItem.loan || "N/A"}
+                        </span>
+                        <span className="text-xs font-medium text-text-muted mt-0.5">
+                          {t("Agent") || "Agent"}: {caseItem.agentId?.name || t("Unassigned") || "Unassigned"}
+                        </span>
                       </div>
-                      {/* Info */}
-                      <div className="min-w-0">
-                        <div className="font-semibold text-sm text-text-main leading-tight truncate">
-                          {agent.name}
-                        </div>
-                        {/* <div className="flex items-center gap-1 mt-0.5">
-                          <Icon className="h-3 w-3 text-text-muted flex-shrink-0" />
-                          <span className="text-[11px] text-text-muted truncate">
-                            {agent.zone}
+
+                      <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-bold text-text-main">
+                            ₹{caseItem.totalDue || "0"}
                           </span>
-                        </div> */}
-                        <div className="text-[11px] text-indigo-500 font-semibold mt-0.5">
-                          {agent.cases} cases
+                          <span
+                            className={`mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusColor}`}
+                          >
+                            {status}
+                          </span>
                         </div>
+                        {/* <FiChevronRight className="h-5 w-5 text-zinc-400 group-hover:text-indigo-500 transition-colors" /> */}
                       </div>
                     </div>
                   );
@@ -175,10 +147,8 @@ export default function DashboardOverviewPage() {
               )}
             </div>
           </div>
-        </>
-      ) : (
-        <AnalyticsView />
-      )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,88 +1,42 @@
 "use client";
 
 import { useApp } from "@/context/AppContext";
-import { FiAlertCircle, FiTrendingUp, FiPercent, FiUsers } from "react-icons/fi";
+import { FiBriefcase, FiCheckCircle } from "react-icons/fi";
 
-const statsConfig = [
-  {
-    id: 1,
-    nameKey: "totalOverduePortfolio",
-    value: "₹4,82,60,000",
-    change: "+6.8%",
-    changeType: "increase",
-    icon: FiAlertCircle,
-    color: "from-rose-500/10 to-orange-500/10 text-rose-500 border-rose-500/20",
-  },
-  {
-    id: 2,
-    nameKey: "recoveredThisMonth",
-    value: "₹1,24,35,000",
-    change: "+18.3%",
-    changeType: "increase",
-    icon: FiTrendingUp,
-    color: "from-emerald-500/10 to-teal-500/10 text-emerald-500 border-emerald-500/20",
-  },
-  {
-    id: 3,
-    nameKey: "recoveryRate",
-    value: "73.4%",
-    change: "+4.1%",
-    changeType: "increase",
-    icon: FiPercent,
-    color: "from-indigo-500/10 to-blue-500/10 text-indigo-500 border-indigo-500/20",
-  },
-  {
-    id: 4,
-    nameKey: "activeAgentsInField",
-    value: "24",
-    change: "+3",
-    changeType: "increase",
-    icon: FiUsers,
-    color: "from-purple-500/10 to-pink-500/10 text-purple-500 border-purple-500/20",
-  },
-];
-
-export default function StatsCards() {
+export default function StatsCards({ activeCases = 0, resolvedCases = 0 }) {
   const { t } = useApp();
 
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {statsConfig.map((item) => {
-        const Icon = item.icon;
-        return (
-          <div
-            key={item.id}
-            className="relative overflow-hidden rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-text-muted">
-                {t(item.nameKey)}
-              </span>
-              <div className={`rounded-xl border bg-gradient-to-br p-2.5 ${item.color}`}>
-                <Icon className="h-5 w-5" />
-              </div>
-            </div>
-            
-            <div className="mt-4">
-              <span className="text-2xl font-bold tracking-tight text-text-main">
-                {item.value}
-              </span>
-              <div className="mt-2 flex items-center gap-1.5 text-xs">
-                <span
-                  className={`font-semibold ${
-                    item.changeType === "increase"
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-rose-600 dark:text-rose-400"
-                  }`}
-                >
-                  {item.change}
-                </span>
-                <span className="text-text-muted">{t("vsLastMonth")}</span>
-              </div>
-            </div>
+    <div className="flex flex-col sm:flex-row gap-5 mb-2">
+      {/* Active Cases Card */}
+      <div className="flex-1 relative overflow-hidden rounded-2xl bg-bg-card p-5 shadow-sm transition-all duration-300 border border-zinc-200 dark:border-zinc-800 border-l-4 border-l-blue-600">
+        <div className="flex flex-col h-full justify-center">
+          <div className="mb-3 rounded-full bg-blue-50 dark:bg-blue-900/20 w-10 h-10 flex items-center justify-center">
+            <FiBriefcase className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
-        );
-      })}
+          <span className="text-xs font-semibold text-text-muted mb-1">
+            {t("ACTIVE_CASES") || "ACTIVE CASES"}
+          </span>
+          <span className="text-xl font-bold tracking-tight text-text-main">
+            {activeCases}
+          </span>
+        </div>
+      </div>
+
+      {/* Resolved Accounts Card */}
+      <div className="flex-1 relative overflow-hidden rounded-2xl bg-bg-card p-5 shadow-sm transition-all duration-300 border border-zinc-200 dark:border-zinc-800 border-l-4 border-l-emerald-600">
+        <div className="flex flex-col h-full justify-center">
+          <div className="mb-3 rounded-full bg-emerald-50 dark:bg-emerald-900/20 w-10 h-10 flex items-center justify-center">
+            <FiCheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <span className="text-xs font-semibold text-text-muted mb-1">
+            {t("RESOLVED_ACCOUNTS") || "RESOLVED ACCOUNTS"}
+          </span>
+          <span className="text-xl font-bold tracking-tight text-text-main">
+            {resolvedCases}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

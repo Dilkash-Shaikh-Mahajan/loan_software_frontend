@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import { useApp } from "@/context/AppContext";
 import LanguageDropdown from "@/components/LanguageDropdown";
 import {
@@ -249,7 +248,7 @@ export default function LandingPage() {
   );
 
   useEffect(() => {
-    setIsLoggedIn(!!Cookies.get("auth_token"));
+    setIsLoggedIn(!!sessionStorage.getItem("auth_token"));
   }, []);
 
   useEffect(() => {

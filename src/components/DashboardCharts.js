@@ -1,24 +1,34 @@
 "use client";
 
+import { useMemo, useState, useRef, useEffect } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
-  ArcElement,
-  Filler,
 } from "chart.js";
-import { Line, Doughnut } from "react-chartjs-2";
+import { Bar, Doughnut } from "react-chartjs-2";
+import { useQuery } from "@tanstack/react-query";
 import { useApp } from "@/context/AppContext";
+import { FiCalendar, FiUsers, FiX } from "react-icons/fi";
+import Loader from "@/components/Loader";
+import {
+  fetchAgentFeedbackStacked,
+  fetchAgentFeedbackAnalytics,
+} from "@/services/apiService";
 
 ChartJS.register(
-  CategoryScale, LinearScale, PointElement, LineElement,
-  BarElement, ArcElement, Title, Tooltip, Legend, Filler
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
 );
 
 export default function DashboardCharts() {
@@ -27,125 +37,350 @@ export default function DashboardCharts() {
   const textColor = isDark ? "#a1a1aa" : "#71717a";
   const gridColor = isDark ? "#27272a" : "#e4e4e7";
 
-  /* ── Recovery vs Target line chart ────────────────────── */
-  const lineData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    datasets: [
-      {
-        label: t("targetRecovery"),
-        data: [120, 135, 140, 155, 160, 170, 175, 185, 190, 200, 210, 220],
-        borderColor: "rgb(99,102,241)",
-        backgroundColor: "rgba(99,102,241,0.06)",
-        fill: true,
-        tension: 0.4,
-        borderWidth: 2,
-        borderDash: [5, 4],
-        pointRadius: 2,
-        pointHoverRadius: 6,
-      },
-      {
-        label: t("actualRecovery"),
-        data: [98, 115, 128, 142, 138, 158, 162, 174, 181, 193, 178, 205],
-        borderColor: "rgb(16,185,129)",
-        backgroundColor: "rgba(16,185,129,0.06)",
-        fill: true,
-        tension: 0.4,
-        borderWidth: 2,
-        pointRadius: 2,
-        pointHoverRadius: 6,
-      },
-    ],
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [tempDate, setTempDate] = useState({ start: "", end: "" });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const datePickerRef = useRef(null);
+
+  // Close date picker on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        datePickerRef.current &&
+        !datePickerRef.current.contains(event.target)
+      ) {
+        setShowDatePicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleApplyDate = () => {
+    setDateRange(tempDate);
+    setShowDatePicker(false);
   };
 
-  const lineOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: "index", intersect: false },
-    plugins: {
-      legend: {
-        position: "top",
-        labels: { color: textColor, font: { family: "var(--font-geist-sans)", size: 12 }, usePointStyle: true, boxWidth: 6 },
-      },
-      tooltip: {
-        backgroundColor: isDark ? "#18181b" : "#ffffff",
-        titleColor: isDark ? "#f4f4f5" : "#09090b",
-        bodyColor: isDark ? "#a1a1aa" : "#71717a",
-        borderColor: isDark ? "#27272a" : "#e4e4e7",
-        borderWidth: 1, padding: 12, cornerRadius: 12, boxPadding: 6, usePointStyle: true,
-        callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ₹${ctx.raw}L` },
-      },
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { color: textColor, font: { family: "var(--font-geist-sans)", size: 11 } } },
-      y: {
-        grid: { color: gridColor },
-        ticks: { color: textColor, font: { family: "var(--font-geist-sans)", size: 11 }, callback: (v) => `₹${v}L` },
-      },
-    },
+  const handleClearDate = () => {
+    const emptyDates = { start: "", end: "" };
+    setTempDate(emptyDates);
+    setDateRange(emptyDates);
+    setShowDatePicker(false);
   };
 
-  /* ── Cases by Recovery Status doughnut ─────────────────── */
-  const doughnutData = {
-    labels: [t("Recovered"), t("InProgress"), t("PendingContact"), t("Escalated")],
-    datasets: [{
-      data: [38, 29, 22, 11],
-      backgroundColor: [
-        "rgba(16,185,129,0.85)",   // emerald – Recovered
-        "rgba(99,102,241,0.85)",   // indigo – In Progress
-        "rgba(245,158,11,0.85)",   // amber – Pending Contact
-        "rgba(239,68,68,0.85)",    // rose – Escalated
+  const formatDateString = (dateStr) => {
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
+  const formatDisplayDate = () => {
+    if (dateRange.start && dateRange.end) {
+      return `${formatDateString(dateRange.start)} to ${formatDateString(dateRange.end)}`;
+    } else if (dateRange.start) {
+      return `From ${formatDateString(dateRange.start)}`;
+    }
+    return t("SELECT_DATE") || "Select Date";
+  };
+
+  // Fetch Stacked Agent Feedback Data
+  const { data: stackedFeedbacks = [], isLoading: isLoadingStacked } = useQuery(
+    {
+      queryKey: ["agentFeedbackStacked", dateRange],
+      queryFn: () =>
+        fetchAgentFeedbackStacked({
+          startDate: dateRange.start,
+          endDate: dateRange.end,
+        }),
+    },
+  );
+
+  // Fetch Agent Feedback Data with date params
+  const { data: agentFeedbacks = [], isLoading: isLoadingAgentFeedbacks } =
+    useQuery({
+      queryKey: ["agentFeedbackAnalytics", dateRange],
+      queryFn: () =>
+        fetchAgentFeedbackAnalytics({
+          startDate: dateRange.start,
+          endDate: dateRange.end,
+        }),
+    });
+
+  // 1. Stacked Bar Chart Config
+  const barData = useMemo(() => {
+    // Get unique agents
+    const labels = stackedFeedbacks.map((item) => item.agentName);
+
+    // Get all unique feedback types across all agents
+    const feedbackTypes = new Set();
+    stackedFeedbacks.forEach((agent) => {
+      agent.feedbacks?.forEach((fb) => feedbackTypes.add(fb.type));
+    });
+    const uniqueFeedbackTypes = Array.from(feedbackTypes);
+
+    // predefined colors for different feedback types
+    const colors = [
+      "#1E63EC",
+      "#10B981",
+      "#F59E0B",
+      "#8B5CF6",
+      "#EC4899",
+      "#14B8A6",
+      "#F43F5E",
+      "#3B82F6",
+      "#F97316",
+      "#06B6D4",
+    ];
+
+    const datasets = uniqueFeedbackTypes.map((fbType, index) => {
+      const data = stackedFeedbacks.map((agent) => {
+        const found = agent.feedbacks?.find((fb) => fb.type === fbType);
+        return found ? found.count : 0;
+      });
+
+      return {
+        label: t(fbType) || fbType,
+        data,
+        backgroundColor: colors[index % colors.length],
+        barThickness: 24,
+      };
+    });
+
+    if (datasets.length === 0) {
+      return {
+        labels: [t("NO_DATA") || "No Data"],
+        datasets: [{ label: t("NO_DATA") || "No Data", data: [0], backgroundColor: "#e4e4e7" }],
+      };
+    }
+
+    return { labels, datasets };
+  }, [stackedFeedbacks, t]);
+
+  const barOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: "top",
+          labels: {
+            color: textColor,
+            font: { family: "var(--font-geist-sans)", size: 11 },
+            usePointStyle: true,
+            boxWidth: 6,
+          },
+        },
+        tooltip: {
+          backgroundColor: isDark ? "#18181b" : "#ffffff",
+          titleColor: isDark ? "#f4f4f5" : "#09090b",
+          bodyColor: isDark ? "#a1a1aa" : "#71717a",
+          borderColor: isDark ? "#27272a" : "#e4e4e7",
+          borderWidth: 1,
+          padding: 12,
+          cornerRadius: 12,
+          usePointStyle: true,
+        },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: {
+            color: textColor,
+            font: { family: "var(--font-geist-sans)", size: 11 },
+          },
+        },
+        y: {
+          stacked: true,
+          grid: { color: gridColor, drawBorder: false, borderDash: [5, 5] },
+          ticks: {
+            color: textColor,
+            font: { family: "var(--font-geist-sans)", size: 11 },
+          },
+        },
+      },
+    }),
+    [isDark, textColor, gridColor],
+  );
+
+  // 2. Agent-wise Feedback Chart Config
+  const agentFeedbackData = useMemo(() => {
+    const data =
+      agentFeedbacks.length > 0
+        ? agentFeedbacks
+        : [{ agentName: t("NO_DATA") || "No Data", feedbackCount: 1 }];
+
+    const bgColors = [
+      "#1E63EC",
+      "#10B981",
+      "#F59E0B",
+      "#8B5CF6",
+      "#EC4899",
+      "#14B8A6",
+      "#F43F5E",
+    ];
+
+    return {
+      labels: data.map((item) => item.agentName),
+      datasets: [
+        {
+          data: data.map((item) => item.feedbackCount),
+          backgroundColor:
+            agentFeedbacks.length > 0
+              ? bgColors.slice(0, data.length)
+              : ["#e4e4e7"],
+          borderWidth: 0,
+          hoverOffset: 4,
+        },
       ],
-      borderColor: isDark ? "#09090b" : "#ffffff",
-      borderWidth: 2,
-      hoverOffset: 4,
-    }],
-  };
+    };
+  }, [agentFeedbacks]);
 
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: "75%",
-    plugins: {
-      legend: {
-        position: "bottom",
-        labels: { color: textColor, font: { family: "var(--font-geist-sans)", size: 11 }, usePointStyle: true, boxWidth: 6, padding: 16 },
+  const doughnutOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "70%",
+      plugins: {
+        legend: {
+          position: "right",
+          labels: {
+            color: textColor,
+            font: { family: "var(--font-geist-sans)", size: 11 },
+            usePointStyle: true,
+            boxWidth: 6,
+          },
+        },
+        tooltip: {
+          backgroundColor: isDark ? "#18181b" : "#ffffff",
+          titleColor: isDark ? "#f4f4f5" : "#09090b",
+          bodyColor: isDark ? "#a1a1aa" : "#71717a",
+          borderColor: isDark ? "#27272a" : "#e4e4e7",
+          borderWidth: 1,
+          padding: 12,
+          cornerRadius: 12,
+          usePointStyle: true,
+        },
       },
-      tooltip: {
-        backgroundColor: isDark ? "#18181b" : "#ffffff",
-        titleColor: isDark ? "#f4f4f5" : "#09090b",
-        bodyColor: isDark ? "#a1a1aa" : "#71717a",
-        borderColor: isDark ? "#27272a" : "#e4e4e7",
-        borderWidth: 1, padding: 12, cornerRadius: 12, usePointStyle: true,
-        callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw}%` },
-      },
-    },
-  };
+    }),
+    [isDark, textColor],
+  );
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-      {/* Recovery vs Target Line Chart */}
-      <div className="rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm lg:col-span-2">
-        <div className="mb-4">
-          <h3 className="text-base font-semibold text-text-main">{t("recoveryVsTarget")}</h3>
-          <p className="text-xs text-text-muted">{t("recoveryVsTargetSub")}</p>
+    <div className="flex flex-col md:flex-row gap-5 mb-6">
+      {/* Visit Outcomes Chart */}
+      <div className="flex-[2] rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm relative">
+        <div className="mb-6 flex flex-row items-center justify-between">
+          <h3 className="text-base font-bold text-text-main">
+            {t("VISIT_OUTCOME") || "VISIT OUTCOME"}
+          </h3>
+          <div className="relative" ref={datePickerRef}>
+            <button
+              onClick={() => {
+                setTempDate(dateRange);
+                setShowDatePicker(!showDatePicker);
+              }}
+              className="flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50/50 dark:border-indigo-900/30 dark:bg-indigo-900/10 px-3 py-1.5 transition-colors hover:bg-indigo-100 dark:hover:bg-indigo-900/20 cursor-pointer"
+            >
+              <FiCalendar className="h-3.5 w-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 max-w-[150px] truncate">
+                {formatDisplayDate()}
+              </span>
+            </button>
+
+            {/* Date Range Picker Dropdown */}
+            {showDatePicker && (
+              <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-border-main bg-bg-card p-4 shadow-xl z-50 animate-fade-in">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-bold text-text-main">
+                    Select Date Range
+                  </h4>
+                  <button
+                    onClick={() => setShowDatePicker(false)}
+                    className="text-text-muted hover:text-text-main cursor-pointer"
+                  >
+                    <FiX className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-text-muted mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={tempDate.start}
+                      onChange={(e) =>
+                        setTempDate({ ...tempDate, start: e.target.value })
+                      }
+                      className="w-full rounded-lg border border-border-main bg-bg-main px-3 py-2 text-sm text-text-main focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-muted mb-1">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={tempDate.end}
+                      onChange={(e) =>
+                        setTempDate({ ...tempDate, end: e.target.value })
+                      }
+                      className="w-full rounded-lg border border-border-main bg-bg-main px-3 py-2 text-sm text-text-main focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={handleClearDate}
+                    className="flex-1 rounded-lg border border-border-main px-3 py-2 text-xs font-semibold text-text-muted hover:bg-bg-main transition-colors cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleApplyDate}
+                    className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors cursor-pointer"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="h-72 w-full">
-          <Line data={lineData} options={lineOptions} />
+
+        <div className="h-60 w-full relative">
+          {isLoadingStacked ? (
+            <div className="flex h-full items-center justify-center">
+              <Loader size="sm" />
+            </div>
+          ) : (
+            <Bar data={barData} options={barOptions} />
+          )}
         </div>
       </div>
 
-      {/* Cases by Status Doughnut */}
-      <div className="rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm">
-        <div className="mb-4">
-          <h3 className="text-base font-semibold text-text-main">{t("casesByStatus")}</h3>
-          <p className="text-xs text-text-muted">{t("casesByStatusSub")}</p>
-        </div>
-        <div className="relative h-64 w-full flex items-center justify-center">
-          <Doughnut data={doughnutData} options={doughnutOptions} />
-          <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-2xl font-bold tracking-tight text-text-main">248</span>
-            <span className="text-[10px] uppercase tracking-wider text-text-muted">{t("totalCases")}</span>
+      {/* Agent-wise Feedback Chart */}
+      <div className="flex-[1] rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm">
+        <div className="mb-4 flex flex-row items-center gap-2">
+          <div className="p-1.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+            <FiUsers className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           </div>
+          <h3 className="text-sm font-bold text-text-main">
+            {t("AGENT_FEEDBACK") || "Agent-wise Feedback"}
+          </h3>
+        </div>
+        <div className="h-48 w-full relative">
+          {isLoadingAgentFeedbacks ? (
+            <div className="flex h-full items-center justify-center">
+              <Loader size="sm" />
+            </div>
+          ) : (
+            <Doughnut data={agentFeedbackData} options={doughnutOptions} />
+          )}
         </div>
       </div>
     </div>

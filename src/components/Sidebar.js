@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import Cookies from "js-cookie";
 import { useApp } from "@/context/AppContext";
 import { 
   FiGrid, 
@@ -31,7 +30,7 @@ const menuItems = [
   { id: "tracking", translationKey: "navTracking", icon: FiMapPin, divider: true },
   { id: "feedback", translationKey: "navFeedback", icon: FiMessageSquare },
   // ─────────────────────────────────────────────────────────
-  { id: "settings", translationKey: "navSettings", icon: FiSettings, divider: true },
+  // ─────────────────────────────────────────────────────────
 ];
 
 export default function Sidebar({ activeTab, mobileOpen, setMobileOpen }) {
@@ -153,7 +152,7 @@ export default function Sidebar({ activeTab, mobileOpen, setMobileOpen }) {
               </button>
               <button
                 onClick={() => {
-                  Cookies.remove("auth_token");
+                  sessionStorage.removeItem("auth_token");
                   router.push("/login");
                 }}
                 className="btn-base flex-1 rounded-xl bg-rose-600 py-2.5 text-xs font-bold text-white hover:bg-rose-550 shadow-sm cursor-pointer"
