@@ -9,7 +9,7 @@
   "status": "Status",
   "date": "Date",
   "loading": "Loading...",
-  "loginHeader": "ApexLoan",
+  "loginHeader": "KGN Associates",
   "loginSub": "Sign in to access your loan management dashboard",
   "email": "Email Address",
   "password": "Password",
@@ -341,5 +341,6 @@
   "saveAgent": "Save Agent",
   "contactNumber": "Contact Number",
   "assignedZone": "Assigned Zone",
-  "joinDate": "Join Date"
+  "joinDate": "Join Date",
+  "location": "Location"
 }

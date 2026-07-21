@@ -31,36 +31,12 @@ export default function DashboardOverviewPage() {
   const recentCases = customersData?.data || [];
 
   return (
-    <div className="relative min-h-screen bg-bg-main overflow-x-hidden pb-20 animate-fade-in">
-      {/* Curved Header Background with Blobs */}
-      <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-br from-[#4F3DE6] to-[#8F53EE] rounded-b-[40px] z-0 overflow-hidden">
-        {/* SVG Blob 1 */}
-        <div className="absolute -top-12 -right-12 opacity-15 animate-[spin_25s_linear_infinite]">
-          <svg width="250" height="250" viewBox="0 0 200 200">
-            <path
-              fill="#FFFFFF"
-              transform="translate(100 100)"
-              d="M46.7,-70C58.3,-62.5,64,-44.6,69.5,-27.6C74.9,-10.7,80,5.3,77.3,20C74.7,34.7,64.2,48.1,50.7,56.4C37.3,64.6,20.8,67.6,4.6,61.9C-11.6,56.2,-27.4,41.9,-41.8,29.9C-56.1,18,-69.1,8.3,-71.4,-2.8C-73.8,-13.8,-65.4,-26.3,-54,-35.1C-42.6,-43.8,-28.1,-48.9,-14.3,-58.5C-0.5,-68.2,12.7,-82.5,26.7,-80.7C40.6,-78.9,55.4,-61,46.7,-70Z"
-            />
-          </svg>
-        </div>
-        {/* SVG Blob 2 */}
-        <div className="absolute top-20 -left-20 opacity-10 animate-[spin_30s_linear_infinite_reverse]">
-          <svg width="300" height="300" viewBox="0 0 200 200">
-            <path
-              fill="#FFFFFF"
-              transform="translate(100 100)"
-              d="M54.7,-64.7C68.9,-54.6,76.9,-35,80.1,-15C83.3,5.1,81.6,25.6,71.2,40.9C60.8,56.3,41.6,66.6,21.8,70.6C2,74.7,-18.3,72.6,-35,63.4C-51.7,54.2,-64.8,38,-72,19.3C-79.3,0.7,-80.7,-20.3,-71.9,-36.8C-63.1,-53.4,-44,-65.5,-25.9,-70.6C-7.8,-75.7,9.3,-73.9,26.4,-69.8C43.4,-65.7,60.4,-59.4,54.7,-64.7Z"
-            />
-          </svg>
-        </div>
-      </div>
-
-      <div className="relative z-10 px-4 sm:px-6 lg:px-8 pt-8">
+    <div className="relative min-h-screen bg-bg-main rounded-2xl shadow-lg shadow-indigo-500/5 transition-all duration-300  overflow-x-hidden pb-20 animate-fade-in">
+      <div className="relative z-10 px-4 sm:px-6 lg:px-8 pt-6">
         {/* Top Header Row */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white font-sans drop-shadow-md">
+            <h1 className="text-3xl font-extrabold tracking-tight text-text-main font-sans">
               {t("WELCOME_BACK") || "Welcome Back"} {userName}
             </h1>
           </div>
@@ -109,7 +85,7 @@ export default function DashboardOverviewPage() {
                   return (
                     <div
                       key={caseItem._id}
-                      className={`flex items-center justify-between p-4 rounded-xl bg-bg-card border-l-4 border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md ${
+                      className={`flex items-center justify-between p-4.5 rounded-2xl bg-bg-card border-l-4 border border-border-main shadow-md shadow-indigo-500/5 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-0.5 ${
                         caseItem.isFeedbackCollected
                           ? "border-l-emerald-500"
                           : "border-l-amber-500"
@@ -124,7 +100,10 @@ export default function DashboardOverviewPage() {
                           {caseItem.product || caseItem.loan || "N/A"}
                         </span>
                         <span className="text-xs font-medium text-text-muted mt-0.5">
-                          {t("Agent") || "Agent"}: {caseItem.agentId?.name || t("Unassigned") || "Unassigned"}
+                          {t("Agent") || "Agent"}:{" "}
+                          {caseItem.agentId?.name ||
+                            t("Unassigned") ||
+                            "Unassigned"}
                         </span>
                       </div>
 

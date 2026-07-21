@@ -202,14 +202,14 @@ export default function EmployeeTrackingView() {
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-main flex items-center gap-2">
+          <h1 className="text-3xl font-extrabold tracking-tight text-text-main flex items-center gap-2 font-sans drop-shadow-sm">
             Live Tracking
             <span className="flex h-2.5 w-2.5 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
           </h1>
-          <p className="text-sm text-text-muted mt-0.5">
+          <p className="text-sm text-text-muted font-medium mt-1">
             Real-time GPS tracking for field agents.
           </p>
         </div>
@@ -256,61 +256,6 @@ export default function EmployeeTrackingView() {
         </div>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-        {[
-          {
-            label: t("totalStaff"),
-            val: agents.length,
-            icon: FiUsers,
-            color: "text-indigo-500",
-            bgGlow: "group-hover:shadow-indigo-500/10",
-            borderGlow: "group-hover:border-indigo-500/30",
-          },
-          {
-            label: t("onSite"),
-            val: onSite,
-            icon: FiMapPin,
-            color: "text-emerald-500",
-            bgGlow: "group-hover:shadow-emerald-500/10",
-            borderGlow: "group-hover:border-emerald-500/30",
-          },
-          {
-            label: t("remote"),
-            val: remote,
-            icon: FiWifi,
-            color: "text-indigo-400",
-            bgGlow: "group-hover:shadow-indigo-400/10",
-            borderGlow: "group-hover:border-indigo-400/30",
-          },
-          {
-            label: t("onLeaveCount"),
-            val: onLeave,
-            icon: FiCalendar,
-            color: "text-amber-500",
-            bgGlow: "group-hover:shadow-amber-500/10",
-            borderGlow: "group-hover:border-amber-500/30",
-          },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className={`group rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${s.bgGlow} ${s.borderGlow}`}
-          >
-            <div className="flex items-center justify-between text-text-muted mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider group-hover:text-text-main transition-colors">
-                {s.label}
-              </span>
-              <div
-                className={`p-1.5 rounded-lg bg-bg-main shadow-sm border border-border-main group-hover:scale-110 transition-transform duration-300`}
-              >
-                <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-text-main">{s.val}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-xs group">
@@ -323,28 +268,6 @@ export default function EmployeeTrackingView() {
             className="w-full rounded-xl border border-border-main bg-bg-card py-2.5 pl-9 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-text-main hover:border-border-main hover:shadow-sm"
           />
         </div>
-        <select
-          value={filterDept}
-          onChange={(e) => setFilterDept(e.target.value)}
-          className="rounded-xl border border-border-main bg-bg-card py-2.5 px-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-text-main cursor-pointer hover:border-border-main hover:shadow-sm appearance-none"
-        >
-          {ZONES.map((z) => (
-            <option key={z} value={z}>
-              {z === "All" ? t("allDepts") : z}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="rounded-xl border border-border-main bg-bg-card py-2.5 px-4 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-text-main cursor-pointer hover:border-border-main hover:shadow-sm appearance-none"
-        >
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s === "All" ? t("allStatuses2") : t(s)}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Conditional View Rendering */}

@@ -10,8 +10,10 @@ import {
   FiX,
 } from "react-icons/fi";
 import Loader from "@/components/Loader";
-import { useQuery } from "@tanstack/react-query";
-import { fetchAgents } from "@/services/apiService";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchAgents, updateUserStatus } from "@/services/apiService";
+
+import toast from "react-hot-toast";
 
 const initialAgents = [
   {
@@ -90,6 +92,7 @@ const initialAgents = [
 
 export default function RecoveryAgentsView() {
   const { t } = useApp();
+  const queryClient = useQueryClient();
   const [agents, setAgents] = useState(initialAgents);
   const [search, setSearch] = useState("");
 
@@ -109,7 +112,8 @@ export default function RecoveryAgentsView() {
         cases: a.casesAssigned || 0,
         recovered: `₹${Math.floor(Math.random() * 20) + 5},00,000`,
         successRate: Math.floor(Math.random() * 30) + 70,
-        status: "Active",
+        status: a.status || "approved", // fallback to approved for existing
+        originalId: a._id,
         joinDate: new Date(a.createdAt || Date.now())
           .toISOString()
           .split("T")[0],
@@ -129,6 +133,21 @@ export default function RecoveryAgentsView() {
 
   const handleSearch = (e) => {
     setSearch(e.target.value);
+  };
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }) => updateUserStatus(id, status),
+    onSuccess: () => {
+      toast.success("Agent status updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update agent status");
+    },
+  });
+
+  const handleUpdateStatus = (id, newStatus) => {
+    statusMutation.mutate({ id, status: newStatus });
   };
 
   const filteredAgents = agents.filter((a) => {
@@ -176,7 +195,7 @@ export default function RecoveryAgentsView() {
 
   // Top stats
   const totalCasesAssigned = agents.reduce((acc, curr) => acc + curr.cases, 0);
-  const activeCount = agents.filter((a) => a.status === "Active").length;
+  const activeCount = agents.filter((a) => a.status === "approved").length;
   const avgSuccess = Math.round(
     agents.reduce((acc, curr) => acc + curr.successRate, 0) / agents.length,
   );
@@ -184,7 +203,7 @@ export default function RecoveryAgentsView() {
   return (
     <div className="space-y-6">
       {/* Header Panel */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end mb-2">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-text-main font-sans drop-shadow-sm">
             {t("recoveryAgentsTitle")}
@@ -197,44 +216,47 @@ export default function RecoveryAgentsView() {
 
       {/* Stats row */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 animate-fade-in">
-        <div className="relative overflow-hidden rounded-2xl border border-border-main bg-gradient-to-br from-bg-card to-bg-main p-6 shadow-sm group hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between text-text-muted">
+        <div className="group relative overflow-hidden rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+          <div className="flex items-center justify-between text-text-muted relative z-10">
             <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
               {t("totalAgents")}
             </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform border border-indigo-500/20">
               <FiUsers className="h-5 w-5" />
             </div>
           </div>
-          <p className="mt-4 text-3xl font-extrabold text-text-main tracking-tight">
+          <p className="mt-4 text-3xl font-extrabold text-text-main tracking-tight relative z-10">
             {agents.length}
           </p>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-border-main bg-gradient-to-br from-bg-card to-bg-main p-6 shadow-sm group hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between text-text-muted">
+        <div className="group relative overflow-hidden rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+          <div className="flex items-center justify-between text-text-muted relative z-10">
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
               {t("activeAgents")}
             </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform border border-emerald-500/20">
               <FiUserCheck className="h-5 w-5" />
             </div>
           </div>
-          <p className="mt-4 text-3xl font-extrabold text-text-main tracking-tight">
+          <p className="mt-4 text-3xl font-extrabold text-text-main tracking-tight relative z-10">
             {activeCount}
           </p>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-border-main bg-gradient-to-br from-bg-card to-bg-main p-6 shadow-sm group hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between text-text-muted">
+        <div className="group relative overflow-hidden rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-amber-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+          <div className="flex items-center justify-between text-text-muted relative z-10">
             <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
               Total Cases
             </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform border border-amber-500/20">
               <FiTrendingUp className="h-5 w-5" />
             </div>
           </div>
-          <p className="mt-4 text-3xl font-extrabold text-text-main tracking-tight">
+          <p className="mt-4 text-3xl font-extrabold text-text-main tracking-tight relative z-10">
             {totalCasesAssigned}
           </p>
         </div>
@@ -264,10 +286,11 @@ export default function RecoveryAgentsView() {
                 <th className="px-6 py-4">{t("agentId")}</th>
                 <th className="px-6 py-4">{t("agentName")}</th>
                 <th className="px-6 py-4">{t("phoneNum")}</th>
-                <th className="px-6 py-4">{t("zone")}</th>
+                {/* <th className="px-6 py-4">{t("zone")}</th> */}
                 <th className="px-6 py-4">{t("casesAssigned")}</th>
                 <th className="px-6 py-4">{t("recoveredAmount")}</th>
                 <th className="px-6 py-4">{t("agentStatus")}</th>
+                <th className="px-6 py-4">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-main">
@@ -312,11 +335,11 @@ export default function RecoveryAgentsView() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-text-muted">{a.phone}</td>
-                    <td className="px-6 py-4">
+                    {/* <td className="px-6 py-4">
                       <span className="inline-flex items-center rounded-full border border-border-main bg-bg-main px-2.5 py-0.5 text-xs font-semibold text-text-main">
                         {a.zone}
                       </span>
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 text-text-muted font-semibold">
                       {a.cases}
                     </td>
@@ -326,13 +349,45 @@ export default function RecoveryAgentsView() {
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                          a.status === "Active"
+                          a.status === "approved"
                             ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                            : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                            : a.status === "pending"
+                              ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                              : "bg-rose-500/10 text-rose-500 border-rose-500/20"
                         }`}
                       >
-                        {a.status === "Active" ? t("Active") : t("Inactive")}
+                        {a.status === "approved"
+                          ? "Approved"
+                          : a.status === "pending"
+                            ? "Pending"
+                            : "Rejected"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        {a.status !== "approved" && (
+                          <button
+                            onClick={() =>
+                              handleUpdateStatus(a.originalId, "approved")
+                            }
+                            disabled={statusMutation.isPending}
+                            className="inline-flex items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 cursor-pointer disabled:opacity-50"
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {a.status !== "rejected" && (
+                          <button
+                            onClick={() =>
+                              handleUpdateStatus(a.originalId, "rejected")
+                            }
+                            disabled={statusMutation.isPending}
+                            className="inline-flex items-center justify-center rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-500/20 cursor-pointer disabled:opacity-50"
+                          >
+                            Reject
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -17,11 +17,12 @@ import {
   FiMapPin,
 } from "react-icons/fi";
 import Loader from "@/components/Loader";
-
 import {
   fetchAgents,
   fetchCustomers,
   uploadCustomers,
+  reopenCustomerFeedback,
+  updateCustomer,
 } from "@/services/apiService";
 
 const initialCases = [
@@ -67,6 +68,13 @@ export default function CasesView() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [reopenCaseId, setReopenCaseId] = useState(null);
+  const [editCaseId, setEditCaseId] = useState(null);
+  const [editFormData, setEditFormData] = useState({ 
+    agentId: "", addd: "", product: "", loan: "", customerName: "", 
+    fatherName: "", mobileNumber: "", pincode: "", model: "", emi: "", 
+    pos: "", bkt: "", totalDue: "", engineNumber: "", chassisNumber: "", regNo: ""
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -178,6 +186,48 @@ export default function CasesView() {
     uploadMutation.mutate(data);
   };
 
+  const reopenMutation = useMutation({
+    mutationFn: reopenCustomerFeedback,
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success("Feedback reopened successfully.");
+        queryClient.invalidateQueries({ queryKey: ["customers"] });
+      } else {
+        toast.error(result.message || "Failed to reopen feedback");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to reopen feedback. Please try again.");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data) => updateCustomer(editCaseId, data),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success("Case updated successfully.");
+        queryClient.invalidateQueries({ queryKey: ["customers"] });
+        setEditCaseId(null);
+      } else {
+        toast.error(result.message || "Failed to update case");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update case. Please try again.");
+    },
+  });
+
+  const handleReopen = (id) => {
+    setReopenCaseId(id);
+  };
+
+  const confirmReopen = () => {
+    if (reopenCaseId) {
+      reopenMutation.mutate(reopenCaseId);
+      setReopenCaseId(null);
+    }
+  };
+
   const onError = (errors, e) => {
     e?.preventDefault();
     toast.error("Please fill all required fields correctly.");
@@ -243,40 +293,45 @@ export default function CasesView() {
 
       {/* Stats row */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-        <div className="group rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-indigo-500/30">
-          <div className="flex items-center justify-between text-text-muted">
-            <span className="text-xs font-semibold uppercase tracking-wider">
+        <div className="group relative overflow-hidden rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+          <div className="flex items-center justify-between text-text-muted relative z-10">
+            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
               Total Active Cases
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform">
-              <FiBriefcase className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform border border-indigo-500/20">
+              <FiBriefcase className="h-5 w-5" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-bold text-text-main">{totalCases}</p>
+          <p className="mt-4 text-3xl font-extrabold text-text-main tracking-tight relative z-10">{totalCases}</p>
         </div>
-        <div className="group rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-emerald-500/30">
-          <div className="flex items-center justify-between text-text-muted">
-            <span className="text-xs font-semibold uppercase tracking-wider">
+
+        <div className="group relative overflow-hidden rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+          <div className="flex items-center justify-between text-text-muted relative z-10">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
               Available Agents
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform">
-              <FiUsers className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform border border-emerald-500/20">
+              <FiUsers className="h-5 w-5" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-bold text-text-main">
+          <p className="mt-4 text-3xl font-extrabold text-text-main tracking-tight relative z-10">
             {agentsList.length}
           </p>
         </div>
-        <div className="group rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-amber-500/30">
-          <div className="flex items-center justify-between text-text-muted">
-            <span className="text-xs font-semibold uppercase tracking-wider">
+
+        <div className="group relative overflow-hidden rounded-2xl border border-border-main bg-bg-card p-6 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-amber-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+          <div className="flex items-center justify-between text-text-muted relative z-10">
+            <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
               Total Value Assigned
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
-              <FiTrendingUp className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform border border-amber-500/20">
+              <FiTrendingUp className="h-5 w-5" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-bold text-text-main">
+          <p className="mt-4 text-3xl font-extrabold text-text-main tracking-tight relative z-10">
             ₹{totalValue}
           </p>
         </div>
@@ -311,6 +366,7 @@ export default function CasesView() {
                 <th className="px-6 py-4">Amount</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-main">
@@ -346,9 +402,15 @@ export default function CasesView() {
                         ₹{c.totalDue || c.loan || "0"}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-500">
-                          Active
-                        </span>
+                        {c.isFeedbackCollected ? (
+                          <span className="inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-500">
+                            Collected
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-500">
+                            Active
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-text-muted">
                         {
@@ -356,6 +418,43 @@ export default function CasesView() {
                             .toISOString()
                             .split("T")[0]
                         }
+                      </td>
+                      <td className="px-6 py-4 flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditCaseId(c._id);
+                            setEditFormData({
+                              agentId: c.agentId?._id || "",
+                              addd: c.addd || "",
+                              product: c.product || "",
+                              loan: c.loan || "",
+                              customerName: c.customerName || "",
+                              fatherName: c.fatherName || "",
+                              mobileNumber: c.mobileNumber || "",
+                              pincode: c.pincode || "",
+                              model: c.model || "",
+                              emi: c.emi || "",
+                              pos: c.pos || "",
+                              bkt: c.bkt || "",
+                              totalDue: c.totalDue || "",
+                              engineNumber: c.engineNumber || "",
+                              chassisNumber: c.chassisNumber || "",
+                              regNo: c.regNo || "",
+                            });
+                          }}
+                          className="inline-flex items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-500/20 cursor-pointer disabled:opacity-50"
+                        >
+                          Edit
+                        </button>
+                        {c.isFeedbackCollected && (
+                          <button
+                            onClick={() => handleReopen(c._id)}
+                            disabled={reopenMutation.isPending}
+                            className="inline-flex items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/20 cursor-pointer disabled:opacity-50"
+                          >
+                            Reopen
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -625,6 +724,134 @@ export default function CasesView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reopen Confirmation Modal */}
+      {reopenCaseId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setReopenCaseId(null)}
+          />
+          <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-border-main bg-bg-card shadow-2xl animate-scale-in">
+            <div className="p-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 mb-4">
+                <svg className="h-8 w-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-text-main mb-2">Reopen Case?</h3>
+              <p className="text-sm text-text-muted">
+                Are you sure you want to reopen this feedback? The assigned agent will need to collect feedback again.
+              </p>
+            </div>
+            
+            <div className="border-t border-border-main p-4 bg-bg-main/30 flex justify-center gap-3">
+              <button
+                onClick={() => setReopenCaseId(null)}
+                className="w-full rounded-xl border border-border-main px-4 py-2.5 text-sm font-semibold text-text-main transition-all hover:bg-bg-main cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReopen}
+                className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02] hover:shadow-amber-500/30 active:scale-[0.98] cursor-pointer"
+              >
+                Yes, Reopen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Case Modal */}
+      {editCaseId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setEditCaseId(null)}
+          />
+          <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-border-main bg-bg-card shadow-2xl animate-scale-in">
+            <div className="border-b border-border-main p-5 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-text-main">
+                Edit Case Details
+              </h3>
+              <button
+                onClick={() => setEditCaseId(null)}
+                className="rounded-lg p-1 text-text-muted hover:bg-bg-main hover:text-text-main transition-colors cursor-pointer"
+              >
+                <FiX className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto max-h-[70vh] space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
+                    Assigned Agent
+                  </label>
+                  <select
+                    value={editFormData.agentId}
+                    onChange={(e) => setEditFormData({ ...editFormData, agentId: e.target.value })}
+                    className="w-full rounded-xl border border-border-main bg-bg-main py-2 px-3 text-sm font-medium outline-none transition-all focus:border-indigo-500 text-text-main"
+                  >
+                    <option value="">Select an agent</option>
+                    {agentsList.map(agent => (
+                      <option key={agent._id} value={agent._id}>{agent.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {["product", "loan", "customerName", "fatherName", "mobileNumber", "pincode", "model", "emi", "pos", "bkt", "totalDue", "engineNumber", "chassisNumber", "regNo"].map(field => (
+                  <div key={field}>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
+                      {field.replace(/([A-Z])/g, ' $1').trim()}
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData[field]}
+                      onChange={(e) => setEditFormData({ ...editFormData, [field]: e.target.value })}
+                      className="w-full rounded-xl border border-border-main bg-bg-main py-2 px-3 text-sm outline-none transition-all focus:border-indigo-500 text-text-main"
+                    />
+                  </div>
+                ))}
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
+                    Address
+                  </label>
+                  <textarea
+                    value={editFormData.addd}
+                    onChange={(e) => setEditFormData({ ...editFormData, addd: e.target.value })}
+                    placeholder="Enter case address..."
+                    className="w-full rounded-xl border border-border-main bg-bg-main py-2 px-3 text-sm outline-none transition-all focus:border-indigo-500 text-text-main resize-none h-20"
+                  />
+                </div>
+              </div>
+
+              <div className="border-t border-border-main pt-4 mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditCaseId(null)}
+                  className="rounded-xl border border-border-main px-4 py-2.5 text-sm font-semibold text-text-main transition-all hover:bg-bg-main cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => updateMutation.mutate(editFormData)}
+                  disabled={updateMutation.isPending}
+                  className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 transition-all hover:scale-[1.02] hover:shadow-indigo-500/30 active:scale-[0.98] cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
+                >
+                  {updateMutation.isPending ? (
+                    <Loader fullScreen={false} size="xs" />
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

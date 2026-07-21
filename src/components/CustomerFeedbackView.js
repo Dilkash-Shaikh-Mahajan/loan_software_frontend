@@ -7,10 +7,10 @@ import {
   FiTrendingUp,
   FiThumbsUp,
   FiClock,
-  FiPlus,
   FiX,
-  FiCheck,
   FiEye,
+  FiChevronDown,
+  FiDownload,
 } from "react-icons/fi";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFeedbacks } from "@/services/apiService";
@@ -24,7 +24,6 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Bar } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -60,21 +59,14 @@ const statusCfg = {
 };
 
 export default function CustomerFeedbackView() {
-  const { t, theme } = useApp();
+  const { t } = useApp();
 
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [modal, setModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-
-  // Form
-  const [fName, setFName] = useState("");
-  const [fLoanId, setFLoanId] = useState("");
-  const [fRating, setFRating] = useState(0);
-  const [fCat, setFCat] = useState("Product");
-  const [fComment, setFComment] = useState("");
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
 
   const { data: fetchedFeedbacks = [], isLoading } = useQuery({
     queryKey: ["feedbacks", filterCat, search, startDate, endDate],
@@ -87,189 +79,189 @@ export default function CustomerFeedbackView() {
       }),
   });
 
-  const isDark = theme === "dark";
-  const textColor = isDark ? "#a1a1aa" : "#71717a";
-  const gridColor = isDark ? "#27272a" : "#e4e4e7";
-
-  const outcomeCounts = {};
-  fetchedFeedbacks.forEach((r) => {
-    const cat = r.feedback || "Unknown";
-    outcomeCounts[cat] = (outcomeCounts[cat] || 0) + 1;
-  });
-
-  const chartLabels = Object.keys(outcomeCounts);
-  const chartDataValues = chartLabels.map((l) => outcomeCounts[l]);
-
-  const barChartData = {
-    labels: chartLabels.map((l) => t(l) || l),
-    datasets: [
-      {
-        label: "Outcomes",
-        data: chartDataValues,
-        backgroundColor: "#4f46e5",
-        borderRadius: 8,
-        borderSkipped: false,
-        barThickness: 40,
-      },
-    ],
-  };
-
-  const barChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: isDark ? "#18181b" : "#ffffff",
-        titleColor: isDark ? "#f4f4f5" : "#09090b",
-        bodyColor: isDark ? "#a1a1aa" : "#71717a",
-        borderColor: isDark ? "#27272a" : "#e4e4e7",
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 12,
-      },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: {
-          color: textColor,
-          font: { family: "var(--font-geist-sans)", size: 11 },
-        },
-      },
-      y: {
-        grid: { color: gridColor, borderDash: [5, 4] },
-        ticks: {
-          color: textColor,
-          font: { family: "var(--font-geist-sans)", size: 11 },
-          stepSize: 1,
-        },
-      },
-    },
-  };
-
-  const getStatus = (r) => {
-    if (r.amount > 0 || r.feedback === "Already made payment")
-      return "Resolved";
-    if (r.feedback === "Promise to pay" || r.feedback === "call back later")
-      return "Pending2";
-    return "Archived";
-  };
-
-  const records = fetchedFeedbacks.map((r) => ({
-    id: r._id,
-    customer: r.customerId?.customerName || "N/A",
-    loanId: r.customerId?.loan || "N/A",
-    rating: r.amount || 0,
-    category: r.feedback || "N/A",
-    comment: r.agentNotes || "No notes",
-    date: new Date(r.visitDate || r.createdAt).toISOString().split("T")[0],
-    status: getStatus(r),
-    attachmentUrl: r.attachmentUrl,
-    original: r,
-  }));
-
-  const totalCollected = records.reduce((a, r) => a + r.rating, 0);
-  const avgRating = records.length
-    ? (totalCollected / records.length).toFixed(0)
+  const totalCollected = fetchedFeedbacks?.reduce((a, r) => a + r.rating, 0);
+  const avgRating = fetchedFeedbacks?.length
+    ? (totalCollected / fetchedFeedbacks?.length).toFixed(0)
     : 0;
-  const positive = records.filter((r) => r.status === "Resolved").length;
-  const positivePct = records.length
-    ? ((positive / records.length) * 100).toFixed(0)
+  const positive = fetchedFeedbacks?.filter(
+    (r) => r.status === "Resolved",
+  ).length;
+  const positivePct = fetchedFeedbacks?.length
+    ? ((positive / fetchedFeedbacks?.length) * 100).toFixed(0)
     : 0;
-  const pending = records.filter((r) => r.status === "Pending2").length;
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // In a real scenario, you'd post to the server here.
-    setModal(false);
-    setFName("");
-    setFLoanId("");
-    setFRating(0);
-    setFCat("Product");
-    setFComment("");
-  };
+  const pending = fetchedFeedbacks?.filter(
+    (r) => r.status === "Pending2",
+  ).length;
 
   const resolve = (id) => console.log("Resolve feedback:", id);
   const archive = (id) => console.log("Archive feedback:", id);
+
+  const getFormattedDate = () => {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+  };
+
+  const getExportData = () => {
+    return (
+      fetchedFeedbacks?.map((r, i) => ({
+        "Customer Name": r.customerId?.customerName || "N/A",
+        "Loan Ref": r.customerId?.loan || "N/A",
+        "Agent Name": r.agentId?.name || "N/A",
+        Category: r.feedback || "N/A",
+        Comment: r.agentNotes || "N/A",
+        Date: new Date(r.visitDate || r.createdAt).toISOString().split("T")[0],
+        Location: r.location?.lat
+          ? `${r.location.lat}, ${r.location.lng}`
+          : "N/A",
+      })) || []
+    );
+  };
+
+  const exportCSV = () => {
+    import("xlsx").then((XLSX) => {
+      const ws = XLSX.utils.json_to_sheet(getExportData());
+      const csv = XLSX.utils.sheet_to_csv(ws);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `customer_feedback_${getFormattedDate()}.csv`,
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setExportDropdownOpen(false);
+    });
+  };
+
+  const exportExcel = () => {
+    import("xlsx").then((XLSX) => {
+      const ws = XLSX.utils.json_to_sheet(getExportData());
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Feedback");
+      XLSX.writeFile(wb, `customer_feedback_${getFormattedDate()}.xlsx`);
+      setExportDropdownOpen(false);
+    });
+  };
+
+  const exportPDF = () => {
+    Promise.all([import("jspdf"), import("jspdf-autotable")]).then(
+      ([{ default: jsPDF }, autoTable]) => {
+        const doc = new jsPDF();
+        doc.text("Customer Feedback", 14, 15);
+
+        const tableColumn = [
+          "Customer Name",
+          "Loan Ref",
+          "Agent Name",
+          "Category",
+          "Date",
+          "Location",
+        ];
+        const tableRows = [];
+
+        fetchedFeedbacks?.forEach((r, i) => {
+          const rowData = [
+            r.customerId?.customerName || "N/A",
+            r.customerId?.loan || "N/A",
+            r.agentId?.name || "N/A",
+            r.feedback || "N/A",
+            new Date(r.visitDate || r.createdAt).toISOString().split("T")[0],
+            r.location?.lat ? `${r.location.lat}, ${r.location.lng}` : "N/A",
+          ];
+          tableRows.push(rowData);
+        });
+
+        const autoTableFn = autoTable.default || autoTable;
+        autoTableFn(doc, {
+          head: [tableColumn],
+          body: tableRows,
+          startY: 20,
+        });
+
+        doc.save(`customer_feedback_${getFormattedDate()}.pdf`);
+        setExportDropdownOpen(false);
+      },
+    );
+  };
+  console.log("fetchedFeedbacks", fetchedFeedbacks);
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-main">
+          <h1 className="text-3xl font-extrabold tracking-tight text-text-main font-sans drop-shadow-sm">
             {t("feedbackTitle")}
           </h1>
-          <p className="text-sm text-text-muted mt-0.5">{t("feedbackSub")}</p>
+          <p className="text-sm text-text-muted font-medium mt-1">
+            {t("feedbackSub")}
+          </p>
         </div>
-      </div>
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-        {[
-          {
-            label: t("totalFeedback"),
-            val: records.length,
-            icon: FiMessageSquare,
-            color: "text-indigo-500",
-          },
-          {
-            label: t("avgRating"),
-            val: `₹${Number(avgRating).toLocaleString()}`,
-            icon: FiTrendingUp,
-            color: "text-amber-500",
-          },
-          {
-            label: t("positiveRate"),
-            val: `${positivePct}%`,
-            icon: FiThumbsUp,
-            color: "text-emerald-500",
-          },
-          {
-            label: t("pendingReviews"),
-            val: pending,
-            icon: FiClock,
-            color: "text-rose-500",
-          },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm"
-          >
-            <div className="flex items-center justify-between text-text-muted mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider">
-                {s.label}
-              </span>
-              <s.icon className={`h-4 w-4 ${s.color}`} />
-            </div>
-            <p className="text-2xl font-bold text-text-main">{s.val}</p>
-          </div>
-        ))}
       </div>
 
       {/* Table Panel */}
       <div className="rounded-2xl border border-border-main bg-bg-card shadow-sm overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-border-main p-5 sm:flex-row sm:items-center sm:justify-between">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("search")}
-            className="rounded-xl border border-border-main bg-bg-main py-2 px-4 text-sm outline-none focus:border-indigo-500 text-text-main flex-1 max-w-sm"
-          />
-          <select
-            value={filterCat}
-            onChange={(e) => setFilterCat(e.target.value)}
-            className="rounded-xl border border-border-main bg-bg-main py-2 px-3 text-sm outline-none focus:border-indigo-500 text-text-main cursor-pointer"
-          >
-            <option value="All">{t("allCategories")}</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {t(c)}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col sm:flex-row gap-3 flex-1">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("search")}
+              className="rounded-xl border border-border-main bg-bg-main py-2 px-4 text-sm outline-none focus:border-indigo-500 text-text-main flex-1 max-w-sm"
+            />
+            <select
+              value={filterCat}
+              onChange={(e) => setFilterCat(e.target.value)}
+              className="rounded-xl border border-border-main bg-bg-main py-2 px-3 text-sm outline-none focus:border-indigo-500 text-text-main cursor-pointer"
+            >
+              <option value="All">{t("allCategories")}</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 relative">
+            <button
+              onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all cursor-pointer"
+            >
+              <FiDownload className="h-4 w-4" />
+              Export
+              <FiChevronDown
+                className={`h-4 w-4 transition-transform ${exportDropdownOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {exportDropdownOpen && (
+              <div className="absolute top-full right-0 mt-2 w-40 rounded-xl border border-border-main bg-bg-card shadow-xl overflow-hidden z-20">
+                <button
+                  onClick={exportCSV}
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-text-main hover:bg-bg-main transition-colors"
+                >
+                  Export as CSV
+                </button>
+                <button
+                  onClick={exportExcel}
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-text-main hover:bg-bg-main transition-colors border-t border-border-main/50"
+                >
+                  Export as Excel
+                </button>
+                <button
+                  onClick={exportPDF}
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-text-main hover:bg-bg-main transition-colors border-t border-border-main/50"
+                >
+                  Export as PDF
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -283,7 +275,7 @@ export default function CustomerFeedbackView() {
                 <th className="px-5 py-4">{t("category")}</th>
                 <th className="px-5 py-4 max-w-xs">{t("comment")}</th>
                 <th className="px-5 py-4">{t("feedbackDate")}</th>
-                <th className="px-5 py-4">{t("feedbackStatus")}</th>
+                <th className="px-5 py-4">{t("location")}</th>
                 <th className="px-5 py-4">Actions</th>
               </tr>
             </thead>
@@ -297,8 +289,8 @@ export default function CustomerFeedbackView() {
                     </p>
                   </td>
                 </tr>
-              ) : records.length > 0 ? (
-                records.map((r, i) => {
+              ) : fetchedFeedbacks?.length > 0 ? (
+                fetchedFeedbacks?.map((r, i) => {
                   console.log("r was", r);
                   return (
                     <tr
@@ -312,31 +304,61 @@ export default function CustomerFeedbackView() {
                         {i + 1}
                       </td>
                       <td className="px-5 py-4 font-semibold text-text-main whitespace-nowrap">
-                        {r.customer}
+                        {r.customerId?.customerName}
                       </td>
                       <td className="px-5 py-4 font-mono text-xs text-text-muted">
-                        {r.loanId}
+                        {r.customerId?.loan}
                       </td>
                       <td className="px-5 py-4 font-semibold text-text-main whitespace-nowrap">
-                        {r.original.agentId?.name}
+                        {r.agentId?.name}
                       </td>
                       <td className="px-5 py-4">
                         <span className="inline-flex items-center rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-xs font-semibold text-indigo-500">
-                          {t(r.category)}
+                          {r.feedback}
                         </span>
                       </td>
                       <td className="px-5 py-4 text-text-muted text-xs max-w-xs">
-                        <p className="line-clamp-2">{r.comment}</p>
+                        <p className="line-clamp-2">{r.agentNotes}</p>
                       </td>
                       <td className="px-5 py-4 text-text-muted whitespace-nowrap">
-                        {r.date}
+                        {
+                          new Date(r.visitDate || r.createdAt)
+                            .toISOString()
+                            .split("T")[0]
+                        }
                       </td>
                       <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusCfg[r.status].cls}`}
-                        >
-                          {t(r.status)}
-                        </span>
+                        {r.location && r.location.lat && r.location.lng ? (
+                          <a
+                            href={`https://www.google.com/maps?q=${r.location.lat},${r.location.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-500/20 transition-colors"
+                          >
+                            <svg
+                              className="w-3.5 h-3.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            View Map
+                          </a>
+                        ) : (
+                          <span className="text-xs text-text-muted">N/A</span>
+                        )}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex gap-1.5 flex-wrap">

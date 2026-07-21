@@ -60,11 +60,31 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="relative min-h-screen bg-bg-main text-text-main transition-colors duration-300">
+    <div className="relative min-h-screen bg-bg-main text-text-main transition-colors duration-300 overflow-hidden">
       {/* Background Animated Glow Blobs */}
       <div className="fixed top-[-10%] right-[-5%] h-[600px] w-[600px] rounded-full bg-indigo-500/10 dark:bg-indigo-500/5 blur-[120px] pointer-events-none animate-glow-1 z-0" />
       <div className="fixed bottom-[-10%] left-[10%] h-[500px] w-[500px] rounded-full bg-purple-500/10 dark:bg-purple-500/5 blur-[120px] pointer-events-none animate-glow-2 z-0" />
       <div className="fixed top-[40%] left-[-10%] h-[400px] w-[400px] rounded-full bg-emerald-500/5 dark:bg-emerald-500/5 blur-[100px] pointer-events-none animate-glow-1 z-0" />
+
+      {/* Organic Background SVG Blobs & Grid Pattern */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-40 dark:opacity-20">
+        {/* Top-Right Decorative Organic Blob */}
+        <div className="absolute -top-24 -right-24 w-[500px] h-[500px] text-indigo-500/20 animate-float">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full fill-current">
+            <path d="M44.7,-76.4C58.8,-69.2,71.8,-57.4,79.6,-43.1C87.4,-28.7,90.1,-11.8,87.6,4.3C85.1,20.4,77.5,35.6,67.6,48.2C57.7,60.8,45.5,70.8,31.7,76.2C17.9,81.6,2.5,82.4,-13.4,79.5C-29.3,76.6,-45.7,70,-58.4,59.3C-71.1,48.6,-80,33.8,-83.4,17.8C-86.8,1.8,-84.7,-15.4,-77.2,-30.2C-69.7,-45,-56.8,-57.4,-42.6,-64.6C-28.4,-71.8,-14.2,-73.8,0.7,-75.1C15.6,-76.3,30.6,-83.6,44.7,-76.4Z" transform="translate(100 100)" />
+          </svg>
+        </div>
+
+        {/* Bottom-Left Decorative Organic Blob */}
+        <div className="absolute -bottom-32 -left-32 w-[600px] h-[600px] text-purple-500/20 animate-float-delayed">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full fill-current">
+            <path d="M39.9,-65.4C51.2,-58.5,60.1,-47.4,66.8,-35.1C73.5,-22.8,78,-9.3,77.2,3.9C76.4,17.1,70.3,30,62,40.9C53.7,51.8,43.2,60.7,31.2,66.2C19.2,71.7,5.7,73.8,-7.4,75.1C-20.5,76.4,-33.2,76.9,-44.6,71.7C-56,66.5,-66.1,55.6,-72.6,42.7C-79.1,29.8,-82,14.9,-80.6,0.8C-79.2,-13.3,-73.5,-26.6,-65,-37.2C-56.5,-47.8,-45.2,-55.7,-33.4,-62.1C-21.6,-68.5,-9.3,-73.4,2.8,-77.7C14.9,-82,28.6,-72.3,39.9,-65.4Z" transform="translate(100 100)" />
+          </svg>
+        </div>
+
+        {/* Subtle Background Grid Pattern Overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px] opacity-15" />
+      </div>
 
       <div className="relative z-10">
         {/* Sidebar Navigation */}

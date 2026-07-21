@@ -149,7 +149,13 @@ export default function DashboardCharts() {
     if (datasets.length === 0) {
       return {
         labels: [t("NO_DATA") || "No Data"],
-        datasets: [{ label: t("NO_DATA") || "No Data", data: [0], backgroundColor: "#e4e4e7" }],
+        datasets: [
+          {
+            label: t("NO_DATA") || "No Data",
+            data: [0],
+            backgroundColor: "#e4e4e7",
+          },
+        ],
       };
     }
 
@@ -169,6 +175,7 @@ export default function DashboardCharts() {
             font: { family: "var(--font-geist-sans)", size: 11 },
             usePointStyle: true,
             boxWidth: 6,
+            // padding: 20,
           },
         },
         tooltip: {
@@ -270,7 +277,7 @@ export default function DashboardCharts() {
   return (
     <div className="flex flex-col md:flex-row gap-5 mb-6">
       {/* Visit Outcomes Chart */}
-      <div className="flex-[2] rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm relative">
+      <div className="flex-[2] rounded-2xl border border-border-main bg-bg-card p-5 shadow-md shadow-indigo-500/5 hover:shadow-xl transition-shadow duration-300 relative">
         <div className="mb-6 flex flex-row items-center justify-between">
           <h3 className="text-base font-bold text-text-main">
             {t("VISIT_OUTCOME") || "VISIT OUTCOME"}
@@ -364,7 +371,7 @@ export default function DashboardCharts() {
       </div>
 
       {/* Agent-wise Feedback Chart */}
-      <div className="flex-[1] rounded-2xl border border-border-main bg-bg-card p-5 shadow-sm">
+      <div className="flex-[1] rounded-2xl border border-border-main bg-bg-card p-5 shadow-md shadow-indigo-500/5 hover:shadow-xl transition-shadow duration-300">
         <div className="mb-4 flex flex-row items-center gap-2">
           <div className="p-1.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
             <FiUsers className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />

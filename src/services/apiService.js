@@ -45,6 +45,12 @@ export const fetchAgents = async () => {
   return data.success && data.data ? data.data : [];
 };
 
+export const updateUserStatus = async (id, status) => {
+  const { data } = await api.put(`/api/users/${id}/status`, { status });
+  return data;
+};
+
+
 export const fetchCustomers = async ({ page = 1, limit = 10, search = "" }) => {
   const { data } = await api.get("/api/customers", {
     params: {
@@ -59,6 +65,16 @@ export const fetchCustomers = async ({ page = 1, limit = 10, search = "" }) => {
 export const fetchFeedbacks = async (params = {}) => {
   const { data } = await api.get("/api/feedbacks", { params });
   return data.success && data.data ? data.data : [];
+};
+
+export const reopenCustomerFeedback = async (id) => {
+  const { data } = await api.put(`/api/customers/${id}/reopen`);
+  return data;
+};
+
+export const updateCustomer = async (id, payload) => {
+  const { data } = await api.put(`/api/customers/${id}`, payload);
+  return data;
 };
 
 export const uploadCustomers = async (payload) => {
