@@ -253,10 +253,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-
-            <p className="mt-12 text-center text-xs font-semibold tracking-wide text-text-muted/60 uppercase">
-              {t("demoMode")}
-            </p>
           </div>
         </div>
       </div>

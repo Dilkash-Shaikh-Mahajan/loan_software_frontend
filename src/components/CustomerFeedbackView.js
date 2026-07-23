@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
-import {
-  FiMessageSquare,
-  FiTrendingUp,
-  FiThumbsUp,
-  FiClock,
-  FiX,
-  FiEye,
-  FiChevronDown,
-  FiDownload,
-} from "react-icons/fi";
+import { FiX, FiEye, FiChevronDown, FiDownload } from "react-icons/fi";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFeedbacks } from "@/services/apiService";
 import Loader from "@/components/Loader";
@@ -52,12 +43,6 @@ const CATEGORIES = [
   "Recon issue",
 ];
 
-const statusCfg = {
-  Resolved: { cls: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  Pending2: { cls: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-  Archived: { cls: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20" },
-};
-
 export default function CustomerFeedbackView() {
   const { t } = useApp();
 
@@ -67,6 +52,35 @@ export default function CustomerFeedbackView() {
   const [endDate, setEndDate] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const addressCache = useState(() => new Map())[0];
+
+  const getAddressFromCoords = async (lat, lng) => {
+    if (!lat || !lng) return "N/A";
+    const cacheKey = `${lat},${lng}`;
+    if (addressCache.has(cacheKey)) {
+      return addressCache.get(cacheKey);
+    }
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=hi,en`,
+        {
+          headers: {
+            "User-Agent": "Loan Software",
+          },
+        }
+      );
+      if (!response.ok) return "N/A";
+      const data = await response.json();
+      const result = data?.display_name || "Address not found";
+      addressCache.set(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error("Reverse geocoding failed:", error);
+      return "N/A";
+    }
+  };
 
   const { data: fetchedFeedbacks = [], isLoading } = useQuery({
     queryKey: ["feedbacks", filterCat, search, startDate, endDate],
@@ -79,113 +93,178 @@ export default function CustomerFeedbackView() {
       }),
   });
 
-  const totalCollected = fetchedFeedbacks?.reduce((a, r) => a + r.rating, 0);
-  const avgRating = fetchedFeedbacks?.length
-    ? (totalCollected / fetchedFeedbacks?.length).toFixed(0)
-    : 0;
-  const positive = fetchedFeedbacks?.filter(
-    (r) => r.status === "Resolved",
-  ).length;
-  const positivePct = fetchedFeedbacks?.length
-    ? ((positive / fetchedFeedbacks?.length) * 100).toFixed(0)
-    : 0;
-  const pending = fetchedFeedbacks?.filter(
-    (r) => r.status === "Pending2",
-  ).length;
-
-  const resolve = (id) => console.log("Resolve feedback:", id);
-  const archive = (id) => console.log("Archive feedback:", id);
-
   const getFormattedDate = () => {
     const d = new Date();
     return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
   };
 
-  const getExportData = () => {
-    return (
-      fetchedFeedbacks?.map((r, i) => ({
-        "Customer Name": r.customerId?.customerName || "N/A",
-        "Loan Ref": r.customerId?.loan || "N/A",
-        "Agent Name": r.agentId?.name || "N/A",
-        Category: r.feedback || "N/A",
-        Comment: r.agentNotes || "N/A",
-        Date: new Date(r.visitDate || r.createdAt).toISOString().split("T")[0],
-        Location: r.location?.lat
-          ? `${r.location.lat}, ${r.location.lng}`
-          : "N/A",
-      })) || []
+  const getExportDataWithAddresses = async () => {
+    if (!fetchedFeedbacks || fetchedFeedbacks.length === 0) return [];
+
+    return await Promise.all(
+      fetchedFeedbacks.map(async (r) => {
+        let address = "N/A";
+        if (r.location?.lat && r.location?.lng) {
+          address = await getAddressFromCoords(r.location.lat, r.location.lng);
+        }
+        return {
+          "Customer Name": r.customerId?.customerName || "N/A",
+          "Loan Ref": r.customerId?.loan || "N/A",
+          "Agent Name": r.agentId?.name || "N/A",
+          Category: r.feedback || "N/A",
+          Comment: r.agentNotes || "N/A",
+          Date: new Date(r.visitDate || r.createdAt).toISOString().split("T")[0],
+          Location: r.location?.lat
+            ? `${r.location.lat}, ${r.location.lng}`
+            : "N/A",
+          Address: address,
+        };
+      })
     );
   };
 
-  const exportCSV = () => {
-    import("xlsx").then((XLSX) => {
-      const ws = XLSX.utils.json_to_sheet(getExportData());
+  const exportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const data = await getExportDataWithAddresses();
+      const XLSX = await import("xlsx");
+      const ws = XLSX.utils.json_to_sheet(data);
       const csv = XLSX.utils.sheet_to_csv(ws);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `customer_feedback_${getFormattedDate()}.csv`,
+        `customer_feedback_${getFormattedDate()}.csv`
       );
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    } catch (err) {
+      console.error("CSV Export error:", err);
+    } finally {
+      setIsExporting(false);
       setExportDropdownOpen(false);
-    });
+    }
   };
 
-  const exportExcel = () => {
-    import("xlsx").then((XLSX) => {
-      const ws = XLSX.utils.json_to_sheet(getExportData());
+  const exportExcel = async () => {
+    setIsExporting(true);
+    try {
+      const data = await getExportDataWithAddresses();
+      const XLSX = await import("xlsx");
+      const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Feedback");
       XLSX.writeFile(wb, `customer_feedback_${getFormattedDate()}.xlsx`);
+    } catch (err) {
+      console.error("Excel Export error:", err);
+    } finally {
+      setIsExporting(false);
       setExportDropdownOpen(false);
-    });
+    }
   };
 
-  const exportPDF = () => {
-    Promise.all([import("jspdf"), import("jspdf-autotable")]).then(
-      ([{ default: jsPDF }, autoTable]) => {
-        const doc = new jsPDF();
-        doc.text("Customer Feedback", 14, 15);
+  const exportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const data = await getExportDataWithAddresses();
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
 
-        const tableColumn = [
-          "Customer Name",
-          "Loan Ref",
-          "Agent Name",
-          "Category",
-          "Date",
-          "Location",
-        ];
-        const tableRows = [];
+      const container = document.createElement("div");
+      container.style.position = "absolute";
+      container.style.left = "-9999px";
+      container.style.top = "-9999px";
+      container.style.width = "1100px";
+      container.style.backgroundColor = "#ffffff";
+      container.style.padding = "20px";
 
-        fetchedFeedbacks?.forEach((r, i) => {
-          const rowData = [
-            r.customerId?.customerName || "N/A",
-            r.customerId?.loan || "N/A",
-            r.agentId?.name || "N/A",
-            r.feedback || "N/A",
-            new Date(r.visitDate || r.createdAt).toISOString().split("T")[0],
-            r.location?.lat ? `${r.location.lat}, ${r.location.lng}` : "N/A",
-          ];
-          tableRows.push(rowData);
-        });
+      container.innerHTML = `
+        <div style="color: #0f172a; font-family: system-ui, -apple-system, sans-serif;">
+          <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 4px; color: #1e1b4b;">Customer Feedback Report</h2>
+          <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">Exported on: ${getFormattedDate()}</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; table-layout: fixed;">
+            <thead>
+              <tr style="background-color: #1e293b; color: #ffffff;">
+                <th style="padding: 8px; border: 1px solid #334155; width: 12%;">Customer Name</th>
+                <th style="padding: 8px; border: 1px solid #334155; width: 10%;">Loan Ref</th>
+                <th style="padding: 8px; border: 1px solid #334155; width: 11%;">Agent Name</th>
+                <th style="padding: 8px; border: 1px solid #334155; width: 10%;">Category</th>
+                <th style="padding: 8px; border: 1px solid #334155; width: 18%;">Comment</th>
+                <th style="padding: 8px; border: 1px solid #334155; width: 8%;">Date</th>
+                <th style="padding: 8px; border: 1px solid #334155; width: 11%;">Location</th>
+                <th style="padding: 8px; border: 1px solid #334155; width: 20%;">Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data
+                .map(
+                  (item, idx) => `
+                <tr style="background-color: ${idx % 2 === 0 ? "#ffffff" : "#f8fafc"}; color: #1e293b;">
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: 600; word-break: break-word;">${item["Customer Name"]}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; word-break: break-word;">${item["Loan Ref"]}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; word-break: break-word;">${item["Agent Name"]}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; word-break: break-word;">${item["Category"]}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; word-break: break-word;">${item["Comment"]}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; word-break: break-word;">${item["Date"]}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; word-break: break-word;">${item["Location"]}</td>
+                  <td style="padding: 8px; border: 1px solid #cbd5e1; word-break: break-word;">${item["Address"]}</td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
 
-        const autoTableFn = autoTable.default || autoTable;
-        autoTableFn(doc, {
-          head: [tableColumn],
-          body: tableRows,
-          startY: 20,
-        });
+      document.body.appendChild(container);
 
-        doc.save(`customer_feedback_${getFormattedDate()}.pdf`);
-        setExportDropdownOpen(false);
-      },
-    );
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+
+      document.body.removeChild(container);
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 10;
+
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight - 20;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight - 20;
+      }
+
+      pdf.save(`customer_feedback_${getFormattedDate()}.pdf`);
+    } catch (err) {
+      console.error("PDF Export error:", err);
+    } finally {
+      setIsExporting(false);
+      setExportDropdownOpen(false);
+    }
   };
   console.log("fetchedFeedbacks", fetchedFeedbacks);
 
@@ -230,32 +309,42 @@ export default function CustomerFeedbackView() {
           <div className="flex items-center gap-2 relative">
             <button
               onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all cursor-pointer"
+              disabled={isExporting}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FiDownload className="h-4 w-4" />
-              Export
-              <FiChevronDown
-                className={`h-4 w-4 transition-transform ${exportDropdownOpen ? "rotate-180" : ""}`}
-              />
+              {isExporting ? (
+                <>
+                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <FiDownload className="h-4 w-4" />
+                  Export
+                  <FiChevronDown
+                    className={`h-4 w-4 transition-transform ${exportDropdownOpen ? "rotate-180" : ""}`}
+                  />
+                </>
+              )}
             </button>
 
-            {exportDropdownOpen && (
+            {exportDropdownOpen && !isExporting && (
               <div className="absolute top-full right-0 mt-2 w-40 rounded-xl border border-border-main bg-bg-card shadow-xl overflow-hidden z-20">
                 <button
                   onClick={exportCSV}
-                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-text-main hover:bg-bg-main transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-text-main hover:bg-bg-main transition-colors cursor-pointer"
                 >
                   Export as CSV
                 </button>
                 <button
                   onClick={exportExcel}
-                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-text-main hover:bg-bg-main transition-colors border-t border-border-main/50"
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-text-main hover:bg-bg-main transition-colors border-t border-border-main/50 cursor-pointer"
                 >
                   Export as Excel
                 </button>
                 <button
                   onClick={exportPDF}
-                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-text-main hover:bg-bg-main transition-colors border-t border-border-main/50"
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-text-main hover:bg-bg-main transition-colors border-t border-border-main/50 cursor-pointer"
                 >
                   Export as PDF
                 </button>
